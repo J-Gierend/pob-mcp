@@ -1,4 +1,5 @@
 import type { PoBLuaApiClient } from "../pobLuaBridge.js";
+import { handleGetBuildIssues } from "./buildGoalsHandlers.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -152,11 +153,51 @@ export async function handleLuaLoadBuild(
       // Non-fatal: spec/item set info is advisory only
     }
 
+    // Auto-context: fetch stats + top issues after successful load
+    let summary = '';
+    try {
+      const [statsResult, issuesResult, infoResult] = await Promise.allSettled([
+        luaClient.getStats(['Life', 'TotalDPS', 'CombinedDPS', 'MinionTotalDPS',
+          'FireResist', 'ColdResist', 'LightningResist', 'ChaosResist', 'TotalEHP']),
+        handleGetBuildIssues({ getLuaClient: context.getLuaClient, ensureLuaClient: async () => {} }),
+        luaClient.getBuildInfo(),
+      ]);
+
+      if (infoResult.status === 'fulfilled') {
+        const info = infoResult.value;
+        summary += `\n**${info.name || name}** | Level ${info.level} ${info.class}${info.ascendancy ? ` (${info.ascendancy})` : ''}\n`;
+      }
+
+      if (statsResult.status === 'fulfilled') {
+        const s = statsResult.value;
+        const dps = Number(s.CombinedDPS || s.TotalDPS || s.MinionTotalDPS || 0);
+        const dpsLabel = (s.MinionTotalDPS && !s.TotalDPS) ? 'Minion DPS' : 'DPS';
+        summary += `Life: ${Number(s.Life ?? 0).toLocaleString()} | ${dpsLabel}: ${Math.round(dps).toLocaleString()} | EHP: ${Number(s.TotalEHP ?? 0).toLocaleString()}\n`;
+        summary += `Resists: F${s.FireResist}% C${s.ColdResist}% L${s.LightningResist}% Ch${s.ChaosResist}%\n`;
+      }
+
+      if (issuesResult.status === 'fulfilled') {
+        const { issues } = issuesResult.value;
+        const topIssues = issues.filter((i: any) => i.severity === 'error' || i.severity === 'warning').slice(0, 3);
+        if (topIssues.length > 0) {
+          summary += '\n**Top Issues:**\n';
+          for (const issue of topIssues) {
+            const icon = issue.severity === 'error' ? '🔴' : '🟡';
+            summary += `  ${icon} ${issue.message}\n`;
+          }
+        } else {
+          summary += '\n✅ No critical issues detected.\n';
+        }
+      }
+    } catch { /* auto-context is best-effort */ }
+
+    const loadText = `✅ Build "${name || 'MCP Build'}" loaded.${extra}` + (summary ? '\n---\n' + summary : '');
+
     return {
       content: [
         {
           type: "text" as const,
-          text: `✅ Build "${name || 'MCP Build'}" loaded.${extra}`,
+          text: loadText,
         },
       ],
     };
