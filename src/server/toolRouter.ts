@@ -29,6 +29,7 @@ import { handleSearchTradeItems, handleGetItemPrice, handleGetLeagues, handleSea
 import { handleGetCurrencyRates, handleFindArbitrage, handleCalculateTradingProfit } from "../handlers/poeNinjaHandlers.js";
 import { handleSearchClusterJewels, handleAnalyzeClusterJewels } from "../handlers/clusterJewelHandlers.js";
 import { handleGenerateShoppingList } from "../handlers/shoppingListHandlers.js";
+import { handlePlanLeveling } from "../handlers/levelingHandlers.js";
 
 export interface ToolRouterDependencies {
   toolGate: ToolGate;
@@ -647,6 +648,12 @@ export async function routeToolCall(
       const maxResults = (args?.max_results as number) || 10;
       return await handleGetPassiveUpgrades(upgradesContext, focus, maxResults);
     }
+
+    case "plan_leveling":
+      return await handlePlanLeveling(
+        { getLuaClient: deps.getLuaClient, ensureLuaClient: deps.ensureLuaClient },
+        args || {}
+      );
 
     case "suggest_masteries":
       return await handleSuggestMasteries({

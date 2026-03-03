@@ -684,6 +684,19 @@ export function getLuaToolSchemas(): any[] {
         properties: {},
       },
     },
+    {
+      name: "plan_leveling",
+      description: "Generate an act-by-act leveling progression guide for a build, including skill gem progression, lab timing, and passive tree priority order",
+      inputSchema: {
+        type: "object",
+        properties: {
+          build_name: { type: "string", description: "Build file to read class/skill from (optional if build loaded in Lua bridge)" },
+          class_name: { type: "string", description: "Override class name (e.g. 'Witch', 'Ranger')" },
+          main_skill: { type: "string", description: "Override main skill name" },
+          ascendancy: { type: "string", description: "Override ascendancy name" },
+        },
+      },
+    },
   ];
 }
 
@@ -1197,49 +1210,38 @@ export function getTradeToolSchemas(): any[] {
             type: "string",
             description: "Currency for price filter (default: 'chaos'). Options: 'chaos', 'divine', 'exalted'",
           },
-          online_only: {
-            type: "boolean",
-            description: "Only show items from online sellers (default: true)",
-          },
-          rarity: {
+          item_rarity: {
             type: "string",
-            description: "Item rarity filter",
-            enum: ["normal", "magic", "rare", "unique", "any"],
+            description: "Item rarity filter: 'unique', 'rare', 'magic', 'normal'",
           },
           min_links: {
             type: "number",
-            description: "Minimum number of linked sockets (e.g., 6 for 6-link)",
+            description: "Minimum number of links (for weapons/armor)",
           },
-          stats: {
+          corrupted: {
+            type: "boolean",
+            description: "Filter by corruption status (true/false/undefined for any)",
+          },
+          identified: {
+            type: "boolean",
+            description: "Filter by identification status",
+          },
+          mods: {
             type: "array",
-            description: "Array of stat requirements with Trade API stat IDs",
             items: {
               type: "object",
               properties: {
-                id: {
-                  type: "string",
-                  description: "Trade API stat ID (e.g., 'pseudo.pseudo_total_life')",
-                },
-                min: {
-                  type: "number",
-                  description: "Minimum value for this stat",
-                },
-                max: {
-                  type: "number",
-                  description: "Maximum value for this stat",
-                },
+                stat_id: { type: "string" },
+                min: { type: "number" },
+                max: { type: "number" },
               },
-              required: ["id"],
+              required: ["stat_id"],
             },
-          },
-          sort: {
-            type: "string",
-            description: "Sort order for results",
-            enum: ["price_asc", "price_desc"],
+            description: "List of stat filters with min/max values",
           },
           limit: {
             type: "number",
-            description: "Maximum number of results to return (default: 5 for token efficiency)",
+            description: "Maximum results (default: 5, max: 10)",
           },
         },
         required: ["league"],
@@ -1247,7 +1249,7 @@ export function getTradeToolSchemas(): any[] {
     },
     {
       name: "get_item_price",
-      description: "Get current market price for a specific item. Returns price statistics (min, max, median, average) from recent listings. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
+      description: "Quick price check for a specific item by name. Returns current market price and recent sales. REQUIRES: POE_TRADE_ENABLED environment variable set to true. IMPORTANT: Use the EXACT league name the user specifies.",
       inputSchema: {
         type: "object",
         properties: {
@@ -1257,15 +1259,15 @@ export function getTradeToolSchemas(): any[] {
           },
           league: {
             type: "string",
-            description: "EXACT league name as specified by user (default: 'Standard'). Do not substitute or change the league name.",
+            description: "EXACT league name as specified by user",
           },
           item_type: {
             type: "string",
-            description: "Base type to narrow down search (optional)",
+            description: "Item base type for more accurate results (optional)",
           },
           rarity: {
             type: "string",
-            description: "Item rarity",
+            description: "Item rarity: 'unique', 'rare', 'magic', 'normal' (optional)",
             enum: ["unique", "rare", "magic", "normal"],
           },
         },
@@ -1274,26 +1276,25 @@ export function getTradeToolSchemas(): any[] {
     },
     {
       name: "get_leagues",
-      description: "Get list of available Path of Exile leagues for trade searches. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
+      description: "Get list of currently active Path of Exile leagues. Use this to find the correct league name before searching trade or prices. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
       inputSchema: {
         type: "object",
         properties: {},
-        required: [],
       },
     },
     {
       name: "search_stats",
-      description: "Search for Trade API stat IDs by name using fuzzy matching. Helps discover the correct stat ID to use in item searches. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
+      description: "Search for item stat/mod IDs to use in trade searches. Use this to find the correct stat_id values for mods you want to filter by. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
       inputSchema: {
         type: "object",
         properties: {
           query: {
             type: "string",
-            description: "Stat name to search for (e.g., 'life', 'fire resistance', 'critical strike')",
+            description: "Search query for stat names (e.g., 'life', 'fire resistance')",
           },
           limit: {
             type: "number",
-            description: "Maximum number of results to return (default: 10)",
+            description: "Maximum results to return (default: 10)",
           },
         },
         required: ["query"],
@@ -1301,281 +1302,143 @@ export function getTradeToolSchemas(): any[] {
     },
     {
       name: "find_item_upgrades",
-      description: "Find item upgrades for a specific equipment slot based on build needs. Analyzes current item and suggests better options with cost/benefit analysis. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
+      description: "Find potential upgrade items for a specific gear slot using poe.ninja price data. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
       inputSchema: {
         type: "object",
         properties: {
+          build_name: {
+            type: "string",
+            description: "Build to find upgrades for",
+          },
           slot: {
             type: "string",
-            description: "Equipment slot to upgrade (e.g., 'Helmet', 'Body Armour', 'Ring 1', 'Weapon 1')",
+            description: "Gear slot to find upgrades for (e.g., 'Helmet', 'Body Armour')",
           },
           league: {
             type: "string",
-            description: "EXACT league name as specified by user (e.g., 'Standard', 'Settlers', 'Keepers', 'Hardcore'). Do not substitute or change the league name.",
+            description: "EXACT league name as specified by user",
           },
-          build_needs: {
-            type: "object",
-            description: "Build requirements for upgrades",
-            properties: {
-              life: {
-                type: "number",
-                description: "Life needed from this slot",
-              },
-              es: {
-                type: "number",
-                description: "Energy shield needed",
-              },
-              fire_resist: {
-                type: "number",
-                description: "Fire resistance gap to fill",
-              },
-              cold_resist: {
-                type: "number",
-                description: "Cold resistance gap to fill",
-              },
-              lightning_resist: {
-                type: "number",
-                description: "Lightning resistance gap to fill",
-              },
-              chaos_resist: {
-                type: "number",
-                description: "Chaos resistance gap to fill",
-              },
-              dps: {
-                type: "number",
-                description: "DPS target for weapons",
-              },
-            },
-          },
-          current_item: {
-            type: "object",
-            description: "Stats of the currently equipped item for comparison",
-            properties: {
-              name: {
-                type: "string",
-                description: "Current item name",
-              },
-              life: {
-                type: "number",
-                description: "Current life on item",
-              },
-              es: {
-                type: "number",
-                description: "Current ES on item",
-              },
-              fire_resist: {
-                type: "number",
-              },
-              cold_resist: {
-                type: "number",
-              },
-              lightning_resist: {
-                type: "number",
-              },
-              chaos_resist: {
-                type: "number",
-              },
-            },
-          },
-          max_price: {
+          budget: {
             type: "number",
-            description: "Maximum price per item in specified currency (default: 100)",
+            description: "Maximum budget in Chaos Orbs",
           },
-          currency: {
+          priority: {
             type: "string",
-            description: "Currency for price limit (default: 'chaos')",
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of recommendations to return (default: 10)",
+            description: "Upgrade priority: 'dps', 'defense', 'resistance', 'balanced' (default: 'balanced')",
+            enum: ["dps", "defense", "resistance", "balanced"],
           },
         },
-        required: ["slot", "league"],
+        required: ["build_name", "slot", "league"],
       },
     },
     {
       name: "find_resistance_gear",
-      description: "Find gear to cap elemental resistances. Searches multiple equipment slots and ranks by efficiency (resistance per chaos spent). REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
+      description: "Find affordable gear with resistance stats to help cap resistances. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
       inputSchema: {
         type: "object",
         properties: {
+          build_name: {
+            type: "string",
+            description: "Build to analyze resistances for",
+          },
           league: {
             type: "string",
-            description: "EXACT league name as specified by user. Do not substitute or change the league name.",
+            description: "EXACT league name as specified by user",
           },
-          fire_resist_needed: {
+          budget: {
             type: "number",
-            description: "Fire resistance gap to fill (e.g., 30 means you need +30% fire res)",
+            description: "Maximum budget per item in Chaos Orbs",
           },
-          cold_resist_needed: {
-            type: "number",
-            description: "Cold resistance gap to fill",
-          },
-          lightning_resist_needed: {
-            type: "number",
-            description: "Lightning resistance gap to fill",
-          },
-          chaos_resist_needed: {
-            type: "number",
-            description: "Chaos resistance gap to fill (optional)",
-          },
-          max_price_per_item: {
-            type: "number",
-            description: "Maximum price per item in chaos (default: 50)",
-          },
-          total_budget: {
-            type: "number",
-            description: "Total budget for all resistance fixes (default: 200)",
-          },
-          currency: {
-            type: "string",
-            description: "Currency for prices (default: 'chaos')",
-          },
-          slots: {
+          slot_priority: {
             type: "array",
-            description: "Limit search to specific slots (optional, default searches all accessory slots)",
-            items: {
-              type: "string",
-            },
-          },
-          limit: {
-            type: "number",
-            description: "Maximum number of recommendations (default: 15)",
+            items: { type: "string" },
+            description: "Gear slots to prioritize (optional, defaults to all slots)",
           },
         },
-        required: ["league"],
+        required: ["build_name", "league"],
       },
     },
     {
       name: "compare_trade_items",
-      description: "Compare multiple trade items side-by-side with stat highlighting. Shows which items have the best values for each stat and which meet build requirements. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
+      description: "Compare two trade items side by side with DPS/defense calculations. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
       inputSchema: {
         type: "object",
         properties: {
-          item_ids: {
-            type: "array",
-            description: "Array of item IDs to compare (max 5 items)",
-            items: {
-              type: "string",
-            },
+          item1_name: {
+            type: "string",
+            description: "First item name to compare",
           },
-          build_context: {
-            type: "object",
-            description: "Optional build requirements to check against",
-            properties: {
-              life_needed: {
-                type: "number",
-                description: "Minimum life needed",
-              },
-              es_needed: {
-                type: "number",
-                description: "Minimum ES needed",
-              },
-              dps_target: {
-                type: "number",
-                description: "Target DPS for weapons",
-              },
-              fire_resist_needed: {
-                type: "number",
-                description: "Fire resistance needed",
-              },
-              cold_resist_needed: {
-                type: "number",
-                description: "Cold resistance needed",
-              },
-              lightning_resist_needed: {
-                type: "number",
-                description: "Lightning resistance needed",
-              },
-            },
+          item2_name: {
+            type: "string",
+            description: "Second item name to compare",
+          },
+          league: {
+            type: "string",
+            description: "EXACT league name as specified by user",
+          },
+          slot: {
+            type: "string",
+            description: "Gear slot for context-aware comparison",
           },
         },
-        required: ["item_ids"],
+        required: ["item1_name", "item2_name", "league"],
       },
     },
     {
       name: "search_cluster_jewels",
-      description: "Search for cluster jewels with specific properties. Cluster jewels are special jewels that can be socketed on the outer rim of the passive tree to add new passive skills. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
+      description: "Search for cluster jewels with specific enchants and notables. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
       inputSchema: {
         type: "object",
         properties: {
           league: {
             type: "string",
-            description: "EXACT league name as specified by user (e.g., 'Standard', 'Settlers', 'Keepers', 'Hardcore'). Do not substitute or change the league name.",
+            description: "EXACT league name as specified by user",
           },
-          size: {
+          jewel_size: {
             type: "string",
-            description: "Cluster jewel size",
-            enum: ["Large", "Medium", "Small"],
-          },
-          passive_count: {
-            type: "number",
-            description: "Number of passive skills the jewel adds (e.g., 8 for Large, 4-5 for Medium, 2-3 for Small). Determines the jewel socket efficiency.",
+            description: "Cluster jewel size: 'large', 'medium', or 'small'",
+            enum: ["large", "medium", "small"],
           },
           enchant: {
             type: "string",
-            description: "Enchantment text to search for (e.g., 'Damage over Time Multiplier', 'Fire Damage', 'Minion Damage'). This defines what bonuses the small passive skills grant.",
+            description: "Enchant modifier name (e.g., 'Added Small Passive Skills grant: 10% increased Fire Damage')",
           },
           notables: {
             type: "array",
-            description: "Array of notable passive names to search for (e.g., ['Touch of Cruelty', 'Unholy Grace']). These are the keystone passives allocated by the cluster jewel.",
-            items: {
-              type: "string",
-            },
-          },
-          min_item_level: {
-            type: "number",
-            description: "Minimum item level (affects possible mod tiers)",
+            items: { type: "string" },
+            description: "Notable passives to search for (e.g., ['Doryani\\'s Lesson', 'Prismatic Heart'])",
           },
           max_price: {
             type: "number",
-            description: "Maximum price in the specified currency",
-          },
-          price_currency: {
-            type: "string",
-            description: "Currency for price filter (default: 'chaos'). Options: 'chaos', 'divine', 'exalted'",
-          },
-          online_only: {
-            type: "boolean",
-            description: "Only show items from online sellers (default: true)",
+            description: "Maximum price in Chaos Orbs",
           },
           limit: {
             type: "number",
-            description: "Maximum number of results to return (default: 10)",
+            description: "Maximum results to return (default: 5)",
           },
         },
-        required: ["league", "size"],
-      },
-    },
-    {
-      name: "analyze_cluster_jewels",
-      description: "Analyze cluster jewels equipped in a Path of Building build. Shows details about each cluster jewel including size, passive count, enchantments, and notables allocated.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          build_name: {
-            type: "string",
-            description: "Name of the build file (e.g., 'MyBuild.xml')",
-          },
-        },
-        required: ["build_name"],
+        required: ["league", "jewel_size"],
       },
     },
     {
       name: "generate_shopping_list",
-      description: "Generate a prioritized shopping list from a PoB build with price estimates. Analyzes equipped items, identifies upgrades, and creates a budget-based shopping plan. Perfect for planning gear progression. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
+      description: "Generate a prioritized shopping list of items to upgrade for a build within a budget. REQUIRES: POE_TRADE_ENABLED environment variable set to true.",
       inputSchema: {
         type: "object",
         properties: {
           build_name: {
             type: "string",
-            description: "Name of the build file (e.g., 'MyBuild.xml')",
+            description: "Build to generate shopping list for",
           },
           league: {
             type: "string",
-            description: "EXACT league name as specified by user (e.g., 'Standard', 'Settlers', 'Keepers', 'Hardcore'). Use get_leagues to see available leagues.",
+            description: "EXACT league name as specified by user",
           },
           budget: {
+            type: "number",
+            description: "Total budget in Chaos Orbs",
+          },
+          budget_tier: {
             type: "string",
             description: "Budget tier for recommendations (default: 'medium')",
             enum: ["budget", "medium", "endgame"],
