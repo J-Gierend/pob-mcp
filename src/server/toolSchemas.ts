@@ -1481,6 +1481,20 @@ export function getBuildGoalsToolSchemas(): any[] {
         },
       },
     },
+    {
+      name: "check_boss_readiness",
+      description: "Check if the loaded build meets the recommended thresholds for a specific endgame boss (Shaper, Elder, Sirus, Maven, Uber Elder, Eater of Worlds, Searing Exarch)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          boss: {
+            type: "string",
+            description: "Boss name: 'shaper', 'elder', 'sirus', 'maven', 'uber_elder', 'eater', 'exarch', or 'pinnacle' for generic endgame",
+          },
+        },
+        required: ["boss"],
+      },
+    },
   ];
 }
 

@@ -36,7 +36,8 @@ const HIGH_IMPACT_TOOLS = [
   'save_tree',
   'snapshot_build',
   'restore_snapshot',
-  'suggest_masteries'
+  'suggest_masteries',
+  'check_boss_readiness'
 ];
 
 export class ToolGate {

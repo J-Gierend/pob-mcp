@@ -30,6 +30,7 @@ import { handleGetCurrencyRates, handleFindArbitrage, handleCalculateTradingProf
 import { handleSearchClusterJewels, handleAnalyzeClusterJewels } from "../handlers/clusterJewelHandlers.js";
 import { handleGenerateShoppingList } from "../handlers/shoppingListHandlers.js";
 import { handlePlanLeveling } from "../handlers/levelingHandlers.js";
+import { handleCheckBossReadiness } from "../handlers/bossReadinessHandlers.js";
 
 export interface ToolRouterDependencies {
   toolGate: ToolGate;
@@ -648,6 +649,13 @@ export async function routeToolCall(
       const maxResults = (args?.max_results as number) || 10;
       return await handleGetPassiveUpgrades(upgradesContext, focus, maxResults);
     }
+
+    case "check_boss_readiness":
+      if (!args?.boss) throw new Error("Missing boss name");
+      return await handleCheckBossReadiness(
+        { getLuaClient: deps.getLuaClient, ensureLuaClient: deps.ensureLuaClient },
+        args.boss as string
+      );
 
     case "plan_leveling":
       return await handlePlanLeveling(
