@@ -239,19 +239,27 @@ export async function handleSetBuildNotes(context: HandlerContext, buildName: st
   const buildPath = path.join(context.pobDirectory, buildName);
   let xml = await fs.readFile(buildPath, 'utf-8');
 
+  // XML-escape the notes content so special characters don't corrupt the build file
+  const escaped = notes
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
   if (xml.includes('<Notes>')) {
-    xml = xml.replace(/<Notes>[\s\S]*?<\/Notes>/, `<Notes>${notes}</Notes>`);
+    xml = xml.replace(/<Notes>[\s\S]*?<\/Notes>/, `<Notes>${escaped}</Notes>`);
   } else if (xml.includes('<Notes/>')) {
-    xml = xml.replace('<Notes/>', `<Notes>${notes}</Notes>`);
+    xml = xml.replace('<Notes/>', `<Notes>${escaped}</Notes>`);
   } else {
-    xml = xml.replace('</PathOfBuilding>', `  <Notes>${notes}</Notes>\n</PathOfBuilding>`);
+    xml = xml.replace('</PathOfBuilding>', `  <Notes>${escaped}</Notes>\n</PathOfBuilding>`);
   }
 
   await fs.writeFile(buildPath, xml, 'utf-8');
+  // Invalidate the build cache so a subsequent get_build_notes reads the updated file
+  context.buildService.invalidateBuild(buildName);
   return {
     content: [{
       type: 'text' as const,
-      text: `Notes updated in ${buildName} (${notes.length} characters).`,
+      text: `✅ Notes updated in ${buildName} (${notes.length} characters).`,
     }],
   };
 }
