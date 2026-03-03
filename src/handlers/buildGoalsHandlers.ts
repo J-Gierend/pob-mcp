@@ -11,6 +11,10 @@ const ISSUES_FIELDS = [
   'FireResist', 'ColdResist', 'LightningResist', 'ChaosResist',
   'FireResistOverCap', 'ColdResistOverCap', 'LightningResistOverCap',
   'SpellSuppressionChance',
+  // DPS fields needed by handleGetPassiveUpgrades for baseDPS scoring
+  'TotalDPS', 'CombinedDPS', 'MinionTotalDPS',
+  // EHP field needed by handleGetPassiveUpgrades for baseEHP scoring
+  'TotalEHP',
 ];
 
 export async function handleGetBuildIssues(context: BuildGoalsHandlerContext) {

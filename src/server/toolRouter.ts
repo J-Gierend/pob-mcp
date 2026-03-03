@@ -280,7 +280,7 @@ export async function routeToolCall(
 
     case "add_gem":
       if (!args) throw new Error("Missing arguments");
-      return await handleAddGem(itemSkillContext, args.group_index as number, args.gem_name as string, args.level as number | undefined, args.quality as number | undefined, args.quality_id as string | undefined, args.enabled as boolean | undefined);
+      return await handleAddGem(itemSkillContext, args.group_index as number, args.gem_name as string, args.level as number | undefined, args.quality as number | undefined, (args.quality_type ?? args.quality_id) as string | undefined, args.enabled as boolean | undefined);
 
     case "set_gem_level":
       if (!args) throw new Error("Missing arguments");
@@ -288,7 +288,7 @@ export async function routeToolCall(
 
     case "set_gem_quality":
       if (!args) throw new Error("Missing arguments");
-      return await handleSetGemQuality(itemSkillContext, args.group_index as number, args.gem_index as number, args.quality as number, args.quality_id as string | undefined);
+      return await handleSetGemQuality(itemSkillContext, args.group_index as number, args.gem_index as number, args.quality as number, (args.quality_type ?? args.quality_id) as string | undefined);
 
     case "remove_skill":
       if (!args) throw new Error("Missing arguments");

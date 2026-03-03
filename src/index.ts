@@ -70,7 +70,7 @@ import { ContextBuilder } from "./utils/contextBuilder.js";
 // Import server modules
 import { ToolGate } from "./server/toolGate.js";
 import { LuaClientManager } from "./server/luaClientManager.js";
-import { getToolSchemas, getLuaToolSchemas, getOptimizationToolSchemas, getConfigToolSchemas, getValidationToolSchemas, getExportToolSchemas, getSkillGemToolSchemas, getTradeToolSchemas, getPoeNinjaToolSchemas } from "./server/toolSchemas.js";
+import { getToolSchemas, getLuaToolSchemas, getOptimizationToolSchemas, getConfigToolSchemas, getValidationToolSchemas, getExportToolSchemas, getSkillGemToolSchemas, getTradeToolSchemas, getPoeNinjaToolSchemas, getBuildGoalsToolSchemas } from "./server/toolSchemas.js";
 import { routeToolCall, type ToolRouterDependencies } from "./server/toolRouter.js";
 import { wrapWithTruncation } from "./server/responseUtils.js";
 
@@ -312,6 +312,7 @@ class PoBMCPServer {
       if (this.luaClientManager.isEnabled()) {
         tools.push(...getLuaToolSchemas());
         tools.push(...getConfigToolSchemas()); // Phase 9: Config tools (require Lua)
+        tools.push(...getBuildGoalsToolSchemas()); // Build diagnostics (require Lua)
       }
 
       // Add optimization tools

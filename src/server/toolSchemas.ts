@@ -1523,6 +1523,14 @@ export function getTradeToolSchemas(): any[] {
         required: ["build_name", "league"],
       },
     },
+  ];
+}
+
+/**
+ * Get build goals/diagnostics tool schemas (require Lua bridge, no Trade API dependency)
+ */
+export function getBuildGoalsToolSchemas(): any[] {
+  return [
     {
       name: "get_build_issues",
       description: "Analyze the currently loaded build for common issues: uncapped resistances, low health pools, over-reserved mana/life, and incomplete spell suppression. Returns categorized errors, warnings, and info messages. Requires a build to be loaded via lua_load_build.",

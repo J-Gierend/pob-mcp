@@ -412,8 +412,8 @@ export async function handleSetGemQuality(
       throw new Error('gem_index must be >= 1');
     }
 
-    if (quality < 0 || quality > 23) {
-      throw new Error('quality must be between 0 and 23');
+    if (quality < 0 || quality > 30) {
+      throw new Error('quality must be between 0 and 30');
     }
 
     await luaClient.setGemQuality({ groupIndex, gemIndex, quality, qualityId });

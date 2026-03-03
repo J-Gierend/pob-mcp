@@ -284,11 +284,21 @@ export async function handleOptimizeTree(
     const allocatedCount = tree?.nodes?.length || 0;
 
     // Get nearby notable/keystone recommendations via TreeService
-    const build = await context.buildService.readBuild(buildName);
-    const allocatedNodeIds = context.buildService.parseAllocatedNodes(build);
-    const allocatedNodes = new Set<string>(allocatedNodeIds);
-    const treeVersion = context.buildService.extractBuildVersion(build);
-    const treeData = await context.treeService.getTreeData(treeVersion);
+    // For in-memory builds (no file on disk), fall back to the node IDs from the Lua bridge
+    let allocatedNodes: Set<string>;
+    let treeData: any;
+    try {
+      const build = await context.buildService.readBuild(buildName);
+      const allocatedNodeIds = context.buildService.parseAllocatedNodes(build);
+      allocatedNodes = new Set<string>(allocatedNodeIds);
+      const treeVersion = context.buildService.extractBuildVersion(build);
+      treeData = await context.treeService.getTreeData(treeVersion);
+    } catch {
+      // Build not on disk — use node IDs already loaded from Lua bridge
+      const luaNodeIds: string[] = tree?.nodes?.map((n: any) => String(n.id ?? n)) ?? [];
+      allocatedNodes = new Set<string>(luaNodeIds);
+      treeData = await context.treeService.getTreeData(undefined);
+    }
 
     // Get nearby nodes within reach
     const goalFilter = goal === 'damage' || goal === 'dps' ? 'damage' :
