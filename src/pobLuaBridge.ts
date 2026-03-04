@@ -3,7 +3,10 @@ import { EventEmitter } from "events";
 import path from "path";
 import os from "os";
 
-type Json = any;
+/** Lua bridge request envelope */
+type LuaRequest = { action: string; params?: Record<string, unknown> };
+/** Lua bridge response envelope — always an object with at minimum `ok: boolean` */
+type LuaResponse = { ok: boolean; error?: string; [key: string]: unknown };
 
 export interface PoBLuaApiOptions {
   cwd?: string;
@@ -208,7 +211,7 @@ export class PoBLuaApiClient {
     });
   }
 
-  private async send(obj: Json): Promise<Json> {
+  private async send(obj: LuaRequest): Promise<LuaResponse> {
     if (!this.proc || !this.proc.stdin) throw new Error("Process not started");
     if (this.killed) throw new Error("PoB API exited");
     if (!this.ready) throw new Error("Process not ready");
@@ -274,7 +277,7 @@ export class PoBLuaApiClient {
   async getStats(fields?: string[]): Promise<Record<string, any>> {
     const res = await this.send({ action: "get_stats", params: { fields } });
     if (!res.ok) throw new Error(res.error || "get_stats failed");
-    return res.stats;
+    return res.stats as Record<string, any>;
   }
 
   async getTree(): Promise<any> {
@@ -288,7 +291,7 @@ export class PoBLuaApiClient {
   async getItems(): Promise<any[]> {
     const res = await this.send({ action: "get_items" });
     if (!res.ok) throw new Error(res.error || "get_items failed");
-    return res.items;
+    return res.items as any[];
   }
 
   async addItem(itemText: string, slotName?: string, noAutoEquip?: boolean): Promise<any> {
@@ -339,7 +342,7 @@ async setTree(params: {
   async exportBuildXml(): Promise<string> {
     const res = await this.send({ action: "export_build_xml" });
     if (!res.ok) throw new Error(res.error || "export_build_xml failed");
-    return res.xml;
+    return res.xml as string;
   }
 
   async getBuildInfo(): Promise<any> {

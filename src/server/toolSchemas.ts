@@ -5,10 +5,20 @@
  * These schemas describe the available tools, their parameters, and documentation.
  */
 
+export interface ToolSchema {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: "object";
+    properties: Record<string, { type: string; description?: string; enum?: string[]; items?: { type: string }; default?: unknown }>;
+    required?: string[];
+  };
+}
+
 /**
  * Get all tool schemas for registration with the MCP server
  */
-export function getToolSchemas(): any[] {
+export function getToolSchemas(): ToolSchema[] {
   return [
     {
       name: "analyze_build",

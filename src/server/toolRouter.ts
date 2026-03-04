@@ -40,8 +40,8 @@ export interface ToolRouterDependencies {
   statMapper: StatMapper | null;
   recommendationEngine: ItemRecommendationEngine | null;
   ninjaClient: PoeNinjaClient;
-  getLuaClient: () => any;
-  ensureLuaClient: () => Promise<any>;
+  getLuaClient: () => import("../pobLuaBridge.js").PoBLuaApiClient | null;
+  ensureLuaClient: () => Promise<void>;
 }
 
 export type ToolResponse = Promise<{
