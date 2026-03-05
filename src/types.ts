@@ -332,7 +332,7 @@ export interface FlaskAnalysis {
 
 // Build Goals / Issues
 export type BuildIssueSeverity = 'error' | 'warning' | 'info';
-export type BuildIssueCategory = 'resistance' | 'survivability' | 'reservation' | 'defence';
+export type BuildIssueCategory = 'resistance' | 'survivability' | 'reservation' | 'defence' | 'items' | 'gems';
 
 export interface BuildIssue {
   severity: BuildIssueSeverity;

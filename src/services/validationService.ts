@@ -97,8 +97,12 @@ export class ValidationService {
 
       if (key !== 'ChaosResist' && value < resistCap) {
         criticalIssues.push(this.createResistIssue(name, value, resistCap));
-      } else if (key === 'ChaosResist' && value < 0) {
-        warnings.push(this.createChaosResistWarning(value));
+      } else if (key === 'ChaosResist') {
+        if (value < -30) {
+          criticalIssues.push(this.createChaosResistWarning(value, 'critical'));
+        } else if (value < 0) {
+          warnings.push(this.createChaosResistWarning(value, 'warning'));
+        }
       }
     }
   }
@@ -121,18 +125,22 @@ export class ValidationService {
     };
   }
 
-  private createChaosResistWarning(value: number): ValidationIssue {
+  private createChaosResistWarning(value: number, severity: 'critical' | 'warning'): ValidationIssue {
+    const isCritical = severity === 'critical';
     return {
-      severity: 'warning',
+      severity,
       category: 'resistances',
-      title: 'Negative Chaos Resistance',
-      description: `Chaos resistance is ${value}%. Negative chaos resist makes you take more chaos damage.`,
+      title: isCritical ? 'Chaos Resistance Critically Low' : 'Negative Chaos Resistance',
+      description: isCritical
+        ? `Chaos resistance is ${value}%. This is dangerously low — chaos damage bypasses energy shield and will kill you quickly in endgame content.`
+        : `Chaos resistance is ${value}%. Negative chaos resist makes you take more chaos damage.`,
       currentValue: value,
-      recommendedValue: 0,
+      recommendedValue: isCritical ? 20 : 0,
       suggestions: [
-        `Craft chaos resistance on gear`,
-        `Use an Amethyst Flask for temporary chaos resistance`,
-        `Consider taking the "Crystal Skin" notable on the tree (+15% chaos res)`,
+        `Craft chaos resistance on gear (rings, amulet, belt have suffix slots)`,
+        `Use an Amethyst Flask for +35% temporary chaos resistance`,
+        `Consider taking chaos resistance notables on the tree`,
+        ...(isCritical ? [`Prioritize this — at ${value}% you take ${Math.round((1 + Math.abs(value) / 100) * 100)}% of chaos damage`] : []),
       ],
       location: 'Gear',
     };

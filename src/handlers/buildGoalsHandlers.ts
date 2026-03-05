@@ -42,7 +42,18 @@ export async function handleGetBuildIssues(context: BuildGoalsHandlerContext) {
     }
 
     const chaos = (stats.ChaosResist as number) ?? 0;
-    if (chaos < 0) {
+    // Get build level for tiered severity
+    let buildLevel = 1;
+    try {
+      const buildInfo = await luaClient.getBuildInfo();
+      buildLevel = buildInfo?.level ?? 1;
+    } catch { /* ignore - default to level 1 */ }
+
+    if (buildLevel >= 80 && chaos < -20) {
+      issues.push({ severity: 'error', category: 'resistance', message: `Chaos resist is ${chaos}% at level ${buildLevel} — critically low for endgame. Aim for at least 0%, ideally 20%+.` });
+    } else if (buildLevel >= 70 && chaos < -30) {
+      issues.push({ severity: 'error', category: 'resistance', message: `Chaos resist is ${chaos}% at level ${buildLevel} — dangerously low for maps. Aim for at least -20%.` });
+    } else if (chaos < 0) {
       issues.push({ severity: 'warning', category: 'resistance', message: `Chaos resist is ${chaos}%` });
     }
 
@@ -69,6 +80,119 @@ export async function handleGetBuildIssues(context: BuildGoalsHandlerContext) {
     if (supp > 0 && supp < 100) {
       issues.push({ severity: 'info', category: 'defence', message: `Spell suppression ${supp}% — not capped at 100%` });
     }
+
+    // Zero DPS check
+    const totalDPS = (stats.TotalDPS as number) ?? 0;
+    const combinedDPS = (stats.CombinedDPS as number) ?? 0;
+    const minionDPS = (stats.MinionTotalDPS as number) ?? 0;
+    if (totalDPS === 0 && combinedDPS === 0 && minionDPS === 0) {
+      issues.push({ severity: 'error', category: 'gems', message: 'Build does 0 DPS — no main skill selected, gems not linked, or skill not dealing damage. Check skill setup.' });
+    }
+
+    // Unspent passive points check
+    try {
+      const tree = await luaClient.getTree();
+      if (tree?.nodes && buildLevel > 1) {
+        const totalAllocated = (tree.nodes as any[]).length;
+        const ascNodes = tree.ascendancyPointsUsed ?? 0;
+        // Subtract: 1 class start + ascendancy start (if ascendancy allocated) + ascendancy nodes
+        const regularNodes = totalAllocated - 1 - (ascNodes > 0 ? 1 : 0) - ascNodes;
+        // Expected passive points: (level - 1) from leveling + quest rewards
+        // Quest rewards: ~24 total by end of Act 10 (level ~68+), scale roughly before that
+        const questPoints = buildLevel >= 68 ? 24 : Math.min(24, Math.floor(buildLevel / 3));
+        const expectedPoints = (buildLevel - 1) + questPoints;
+        const unspent = expectedPoints - regularNodes;
+        if (unspent >= 15) {
+          issues.push({ severity: 'error', category: 'defence', message: `~${unspent} passive points appear unspent (${regularNodes} regular nodes allocated, ~${expectedPoints} expected at level ${buildLevel}). Allocate remaining points.` });
+        } else if (unspent >= 5) {
+          issues.push({ severity: 'warning', category: 'defence', message: `~${unspent} passive points appear unspent (${regularNodes} regular nodes allocated, ~${expectedPoints} expected at level ${buildLevel}).` });
+        }
+      }
+    } catch { /* tree check is best-effort */ }
+
+    // Unequipped items & jewels check
+    try {
+      const items = await luaClient.getItems();
+      if (Array.isArray(items)) {
+        // Find jewel slots that are empty (id === 0)
+        const jewelSlots = items.filter((it: any) => it.slot && /jewel/i.test(it.slot));
+        const emptyJewelSlots = jewelSlots.filter((it: any) => !it.id || it.id === 0);
+        if (emptyJewelSlots.length > 0) {
+          issues.push({
+            severity: 'warning',
+            category: 'items',
+            message: `${emptyJewelSlots.length} jewel socket(s) empty: ${emptyJewelSlots.map((j: any) => j.slot).join(', ')}. Jewels provide significant stats.`,
+          });
+        }
+
+        // Check for unequipped gear slots
+        const gearSlots = ['Weapon 1', 'Body Armour', 'Helmet', 'Gloves', 'Boots', 'Belt', 'Ring 1', 'Ring 2', 'Amulet'];
+        for (const slotName of gearSlots) {
+          const slot = items.find((it: any) => it.slot === slotName);
+          if (slot && (!slot.id || slot.id === 0)) {
+            issues.push({
+              severity: 'warning',
+              category: 'items',
+              message: `${slotName} slot is empty — equip an item for more stats.`,
+            });
+          }
+        }
+
+        // Check for empty flask slots
+        const flaskSlots = items.filter((it: any) => it.slot && /flask/i.test(it.slot));
+        const emptyFlasks = flaskSlots.filter((it: any) => !it.id || it.id === 0);
+        if (emptyFlasks.length > 0) {
+          issues.push({
+            severity: emptyFlasks.length >= 3 ? 'error' : 'warning',
+            category: 'items',
+            message: `${emptyFlasks.length}/5 flask slot(s) empty. Flasks are a major source of defense and offense.`,
+          });
+        }
+      }
+    } catch { /* items check is best-effort */ }
+
+    // Gem coherence check - detect mixed damage scaling
+    try {
+      const skillsData = await luaClient.getSkills();
+      if (skillsData?.groups) {
+        for (const group of skillsData.groups as any[]) {
+          if (!group.enabled || !group.gems || group.gems.length < 2) continue;
+          const gems = (group.gems as any[]).filter((g: any) => g.enabled);
+          const supports = gems.filter((g: any) => g.isSupport);
+          if (supports.length < 2) continue;
+
+          const supportNames = supports.map((g: any) => (g.name || '').toLowerCase());
+
+          // Check for Brutality + elemental/chaos supports (direct conflict)
+          const hasBrutality = supportNames.some((n: string) => n.includes('brutality'));
+          if (hasBrutality) {
+            const eleOrChaos = supportNames.filter((n: string) =>
+              n.includes('elemental') || n.includes('fire') || n.includes('cold') ||
+              n.includes('lightning') || n.includes('chaos') || n.includes('void manipulation') ||
+              n.includes('added fire') || n.includes('added cold') || n.includes('added lightning')
+            );
+            if (eleOrChaos.length > 0) {
+              issues.push({
+                severity: 'error',
+                category: 'gems',
+                message: `Skill group "${group.label || `#${group.index}`}": Brutality prevents all elemental/chaos damage, but has ${eleOrChaos.join(', ')} — these supports do nothing.`,
+              });
+            }
+          }
+
+          // Check for Elemental Damage with Attacks + Melee Physical Damage (mixed scaling, not a hard conflict but suboptimal)
+          const hasEleDmgAtk = supportNames.some((n: string) => n.includes('elemental damage with attacks'));
+          const hasMeleePhys = supportNames.some((n: string) => n.includes('melee physical'));
+          if (hasEleDmgAtk && hasMeleePhys) {
+            issues.push({
+              severity: 'info',
+              category: 'gems',
+              message: `Skill group "${group.label || `#${group.index}`}": Has both "Elemental Damage with Attacks" and "Melee Physical Damage" — these scale different damage types. Consider focusing on one scaling direction.`,
+            });
+          }
+        }
+      }
+    } catch { /* gem check is best-effort */ }
 
     return { issues, stats };
   });
@@ -107,9 +231,12 @@ export function formatIssuesResponse(issues: BuildIssue[], stats: Record<string,
     }
   }
 
-  text += '=== Current Defensive Stats ===\n';
+  text += '=== Current Stats ===\n';
   text += `Life: ${stats.Life ?? 'N/A'}  |  ES: ${stats.EnergyShield ?? 'N/A'}  |  Mana: ${stats.Mana ?? 'N/A'}\n`;
   text += `Fire: ${stats.FireResist ?? 0}%  |  Cold: ${stats.ColdResist ?? 0}%  |  Lightning: ${stats.LightningResist ?? 0}%  |  Chaos: ${stats.ChaosResist ?? 0}%\n`;
+  const dps = stats.CombinedDPS ?? stats.TotalDPS ?? 0;
+  const minionDps = stats.MinionTotalDPS ?? 0;
+  text += `DPS: ${Number(dps).toLocaleString()}${minionDps > 0 ? `  |  Minion DPS: ${Number(minionDps).toLocaleString()}` : ''}\n`;
 
   return {
     content: [{ type: 'text' as const, text }],
