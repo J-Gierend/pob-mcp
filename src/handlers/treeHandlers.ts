@@ -196,21 +196,50 @@ export async function handleGetNearbyNodes(
 
 export async function handleFindPath(
   context: TreeHandlerContext,
-  buildName: string,
+  buildName: string | undefined,
   targetNodeId: string,
   showAlternatives?: boolean
 ) {
   try {
-    const build = await context.buildService.readBuild(buildName);
-    const spec = context.buildService.getActiveSpec(build);
+    let allocatedNodeIds: string[] = [];
+    let treeVersion = 'Unknown';
 
-    if (!spec) {
-      throw new Error("Build has no passive tree data");
+    // Try file-based path first
+    if (buildName) {
+      try {
+        const build = await context.buildService.readBuild(buildName);
+        const spec = context.buildService.getActiveSpec(build);
+        if (!spec) {
+          throw new Error("Build has no passive tree data");
+        }
+        allocatedNodeIds = context.buildService.parseAllocatedNodes(build);
+        treeVersion = context.buildService.extractBuildVersion(build);
+      } catch (fileErr) {
+        // Fall through to Lua fallback
+        if (buildName) throw fileErr; // Re-throw if explicitly requested
+      }
     }
 
-    const allocatedNodeIds = context.buildService.parseAllocatedNodes(build);
+    // Lua bridge fallback when no file or file read failed
+    if (allocatedNodeIds.length === 0 && context.getLuaClient) {
+      const luaClient = context.getLuaClient();
+      if (luaClient) {
+        const treeResult = await luaClient.getTree();
+        allocatedNodeIds = (treeResult.nodes || []).map(String);
+        treeVersion = treeResult.treeVersion || 'Unknown';
+      }
+    }
+
+    if (allocatedNodeIds.length === 0) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: "No allocated nodes found. Provide a build_name or load a build with lua_load_build first.",
+        }],
+      };
+    }
+
     const allocatedNodes = new Set<string>(allocatedNodeIds);
-    const treeVersion = context.buildService.extractBuildVersion(build);
     const treeData = await context.treeService.getTreeData(treeVersion);
 
     // Check if target node exists

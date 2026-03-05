@@ -500,7 +500,9 @@ export async function handleUpdateTreeDelta(context: LuaHandlerContext, addNodes
     if (addNodes?.length)    params.addNodes    = addNodes.map(Number);
     if (removeNodes?.length) params.removeNodes = removeNodes.map(Number);
 
-    const tree = await luaClient.updateTreeDelta(params);
+    const result = await luaClient.updateTreeDelta(params);
+    const tree = result?.tree;
+    const autoPathedNodes = result?.autoPathedNodes;
 
     const actualCount = Array.isArray(tree?.nodes) ? tree.nodes.length : '?';
     const addedCount  = addNodes?.length ?? 0;
@@ -511,7 +513,11 @@ export async function handleUpdateTreeDelta(context: LuaHandlerContext, addNodes
     if (removedCount)  text += `  Removed: ${removedCount} node(s)\n`;
     text += `  Total allocated: ${actualCount} nodes\n`;
 
-    if (addedCount > 0) {
+    if (autoPathedNodes && autoPathedNodes.length > 0) {
+      text += `\n🔗 Auto-pathed ${autoPathedNodes.length} intermediate node(s) to maintain connectivity.`;
+    }
+
+    if (addedCount > 0 && !autoPathedNodes?.length) {
       text += `\n⚠️  If total count is lower than expected, some nodes may have been dropped (not connected or invalid IDs).`;
     }
 

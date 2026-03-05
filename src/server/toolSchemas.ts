@@ -161,18 +161,17 @@ export function getToolSchemas(): ToolSchema[] {
             description: "Optional text filter for node names/stats",
           },
         },
-        required: ["build_name"],
       },
     },
     {
       name: "find_path_to_node",
-      description: "Find the shortest path from your current tree to a specific passive node",
+      description: "Find the shortest path from your current tree to a specific passive node. Uses loaded Lua bridge build when no build_name is provided.",
       inputSchema: {
         type: "object",
         properties: {
           build_name: {
             type: "string",
-            description: "Build to analyze",
+            description: "Build to analyze (optional if a build is loaded via lua_load_build)",
           },
           target_node_id: {
             type: "string",
@@ -183,7 +182,7 @@ export function getToolSchemas(): ToolSchema[] {
             description: "Return up to 3 alternative paths instead of just the shortest (default: false)",
           },
         },
-        required: ["build_name", "target_node_id"],
+        required: ["target_node_id"],
       },
     },
     {
@@ -347,7 +346,7 @@ export function getLuaToolSchemas(): any[] {
     },
     {
       name: "lua_set_tree",
-      description: "Set passive tree allocation (modifies currently loaded build)",
+      description: "Set passive tree allocation (modifies currently loaded build). IMPORTANT: All nodes must form a connected path from the class start node — any node not reachable through other allocated nodes back to the start will be silently dropped. Use find_path_to_node first to discover the intermediate travel nodes needed to reach your target.",
       inputSchema: {
         type: "object",
         properties: {
@@ -370,7 +369,7 @@ export function getLuaToolSchemas(): any[] {
     },
     {
       name: "update_tree_delta",
-      description: "Incrementally add or remove specific passive nodes from the current tree allocation. Safer than lua_set_tree because you only specify the nodes to change, not the entire tree. Use this to add individual nodes without needing to track the full current node list.",
+      description: "Incrementally add or remove specific passive nodes from the current tree allocation. Automatically finds and includes intermediate path nodes when adding nodes that aren't directly adjacent to the current tree. Safer than lua_set_tree because you only specify the nodes to change, not the entire tree.",
       inputSchema: {
         type: "object",
         properties: {
