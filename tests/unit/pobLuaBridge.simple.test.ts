@@ -103,10 +103,9 @@ describe('PoBLuaApiClient - Simple Tests', () => {
   });
 });
 
-describe('PoBLuaTcpClient - API surface', () => {
-  // Just verify the class exists and can be imported
-  it('should be able to import PoBLuaTcpClient', async () => {
-    const { PoBLuaTcpClient } = await import('../../src/pobLuaBridge');
-    expect(PoBLuaTcpClient).toBeDefined();
+describe('PoBLuaApiClient - module exports', () => {
+  it('should export PoBLuaApiClient', async () => {
+    const { PoBLuaApiClient } = await import('../../src/pobLuaBridge');
+    expect(PoBLuaApiClient).toBeDefined();
   });
 });

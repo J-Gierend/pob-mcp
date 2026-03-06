@@ -20,7 +20,6 @@ const mockDeps: ContextDependencies = {
   skillGemService: mockSkillGemService,
   pobDirectory: '/test/pob',
   luaEnabled: true,
-  useTcpMode: false,
   getLuaClient: () => mockLuaClient,
   ensureLuaClient: async () => {},
   stopLuaClient: async () => {},
@@ -36,7 +35,10 @@ describe('ContextBuilder', () => {
       expect(context.buildService).toBe(mockBuildService);
       expect(context.treeService).toBe(mockTreeService);
       expect(context.validationService).toBe(mockValidationService);
-      expect(Object.keys(context)).toHaveLength(3);
+      expect(context.pobDirectory).toBe('/test/pob');
+      expect(typeof context.getLuaClient).toBe('function');
+      expect(typeof context.ensureLuaClient).toBe('function');
+      expect(Object.keys(context)).toHaveLength(6);
     });
   });
 
@@ -58,7 +60,10 @@ describe('ContextBuilder', () => {
       expect(context.buildService).toBe(mockBuildService);
       expect(context.treeService).toBe(mockTreeService);
       expect(context.validationService).toBe(mockValidationService);
-      expect(Object.keys(context)).toHaveLength(3);
+      expect(context.pobDirectory).toBe('/test/pob');
+      expect(typeof context.getLuaClient).toBe('function');
+      expect(typeof context.ensureLuaClient).toBe('function');
+      expect(Object.keys(context)).toHaveLength(6);
     });
   });
 
@@ -68,7 +73,6 @@ describe('ContextBuilder', () => {
 
       expect(context.pobDirectory).toBe('/test/pob');
       expect(context.luaEnabled).toBe(true);
-      expect(context.useTcpMode).toBe(false);
       expect(context.getLuaClient()).toBe(mockLuaClient);
       expect(typeof context.ensureLuaClient).toBe('function');
       expect(typeof context.stopLuaClient).toBe('function');
@@ -115,7 +119,10 @@ describe('ContextBuilder', () => {
 
       expect(context.buildService).toBe(mockBuildService);
       expect(context.skillGemService).toBe(mockSkillGemService);
-      expect(Object.keys(context)).toHaveLength(2);
+      expect(context.pobDirectory).toBe('/test/pob');
+      expect(typeof context.getLuaClient).toBe('function');
+      expect(typeof context.ensureLuaClient).toBe('function');
+      expect(Object.keys(context)).toHaveLength(5);
     });
   });
 
@@ -124,9 +131,10 @@ describe('ContextBuilder', () => {
       const context = builder.buildAdvancedOptimizationContext();
 
       expect(context.buildService).toBe(mockBuildService);
+      expect(context.pobDirectory).toBe('/test/pob');
       expect(context.getLuaClient()).toBe(mockLuaClient);
       expect(typeof context.ensureLuaClient).toBe('function');
-      expect(Object.keys(context)).toHaveLength(3);
+      expect(Object.keys(context)).toHaveLength(4);
     });
   });
 
@@ -136,9 +144,10 @@ describe('ContextBuilder', () => {
 
       expect(context.buildService).toBe(mockBuildService);
       expect(context.validationService).toBe(mockValidationService);
+      expect(context.pobDirectory).toBe('/test/pob');
       expect(context.getLuaClient()).toBe(mockLuaClient);
       expect(typeof context.ensureLuaClient).toBe('function');
-      expect(Object.keys(context)).toHaveLength(4);
+      expect(Object.keys(context)).toHaveLength(5);
     });
   });
 });
