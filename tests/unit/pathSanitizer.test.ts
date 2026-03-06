@@ -7,12 +7,12 @@ describe('sanitizeBuildName', () => {
 
   it('should accept normal build names', () => {
     const result = sanitizeBuildName('build.xml', baseDir);
-    expect(result).toBe(path.join(baseDir, 'build.xml'));
+    expect(result).toBe(path.resolve(baseDir, 'build.xml'));
   });
 
   it('should accept subdirectory build names', () => {
     const result = sanitizeBuildName('league/starter.xml', baseDir);
-    expect(result).toBe(path.join(baseDir, 'league', 'starter.xml'));
+    expect(result).toBe(path.resolve(baseDir, 'league', 'starter.xml'));
   });
 
   it('should reject path traversal with ../', () => {
@@ -37,6 +37,6 @@ describe('sanitizeBuildName', () => {
 
   it('should accept deeply nested valid paths', () => {
     const result = sanitizeBuildName('a/b/c/build.xml', baseDir);
-    expect(result).toBe(path.join(baseDir, 'a', 'b', 'c', 'build.xml'));
+    expect(result).toBe(path.resolve(baseDir, 'a', 'b', 'c', 'build.xml'));
   });
 });
