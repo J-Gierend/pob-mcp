@@ -5,3 +5,7 @@
 {"ts": "2026-03-06T23:49:56Z", "phase": "pipeline", "event": "plan_source", "detail": "file=/home/jg/repos/pob-mcp/plans/02-docs-cleanup-refactor.md"}
 {"ts": "2026-03-06T23:49:56Z", "phase": "pipeline", "event": "state_machine_start", "detail": "phases=plan reproduce build review test srt ship,task_type=bugfix,project_type=server,pipeline_version=2.0"}
 {"ts": "2026-03-06T23:49:56Z", "phase": "plan", "event": "phase_start", "detail": "attempt=1"}
+{"ts": "2026-03-06T23:50:46Z", "phase": "plan", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-06T23:50:46Z", "phase": "plan", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-06T23:50:46Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=plan,result=GATE: ADVANCE to reproduce"}
+{"ts": "2026-03-06T23:50:46Z", "phase": "reproduce", "event": "phase_start", "detail": "attempt=1"}
