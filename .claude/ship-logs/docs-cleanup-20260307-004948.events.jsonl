@@ -9,3 +9,10 @@
 {"ts": "2026-03-06T23:50:46Z", "phase": "plan", "event": "phase_end", "detail": "attempt=1"}
 {"ts": "2026-03-06T23:50:46Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=plan,result=GATE: ADVANCE to reproduce"}
 {"ts": "2026-03-06T23:50:46Z", "phase": "reproduce", "event": "phase_start", "detail": "attempt=1"}
+{"ts":"2026-03-06T23:53:03Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/reproduce_bugs.sh"}
+{"ts":"2026-03-06T23:53:06Z","phase":"reproduce","event":"test_result","result":"pass"}
+{"ts": "2026-03-06T23:53:19Z", "phase": "reproduce", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-06T23:53:19Z", "phase": "reproduce", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-06T23:53:19Z", "phase": "reproduce", "event": "integrity_warning", "detail": "unexpected_change=/home/jg/repos/pob-mcp-worktrees/docs-cleanup/.claude/workflow-state/verify/suite-passed.txt"}
+{"ts": "2026-03-06T23:53:19Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=reproduce,result=GATE: ADVANCE to build"}
+{"ts": "2026-03-06T23:53:19Z", "phase": "build", "event": "phase_start", "detail": "attempt=1"}
