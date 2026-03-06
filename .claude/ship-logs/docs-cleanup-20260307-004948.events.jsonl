@@ -19,3 +19,8 @@
 {"ts":"2026-03-06T23:55:25Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
 {"ts":"2026-03-06T23:58:00Z","phase":"build","event":"test_result","result":"pass"}
 {"ts":"2026-03-06T23:58:17Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-06T23:58:27Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
+{"ts":"2026-03-06T23:58:35Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
+{"ts":"2026-03-06T23:58:42Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
+{"ts":"2026-03-06T23:58:54Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
+{"ts":"2026-03-06T23:59:00Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
