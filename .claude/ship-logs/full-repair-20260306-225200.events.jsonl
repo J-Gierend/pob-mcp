@@ -128,3 +128,8 @@
 {"ts": "2026-03-06T22:22:07Z", "phase": "pipeline", "event": "independent_test_passed", "detail": "baseline=10,current=10,tolerance=3"}
 {"ts": "2026-03-06T22:22:07Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=srt,result=GATE: ADVANCE to ship"}
 {"ts": "2026-03-06T22:22:07Z", "phase": "ship", "event": "phase_start", "detail": "attempt=1"}
+{"ts": "2026-03-06T22:22:34Z", "phase": "ship", "event": "harness_exit", "detail": "exit_code=1"}
+{"ts": "2026-03-06T22:22:34Z", "phase": "ship", "event": "phase_incomplete", "detail": "no marker"}
+{"ts": "2026-03-06T22:22:34Z", "phase": "pipeline", "event": "gate_loopback", "detail": "from=ship,to=ship,count=2"}
+{"ts": "2026-03-06T22:22:34Z", "phase": "ship", "event": "phase_start", "detail": "attempt=2"}
+{"ts":"2026-03-06T22:23:07Z","phase":"ship","event":"test_result","result":"pass"}
