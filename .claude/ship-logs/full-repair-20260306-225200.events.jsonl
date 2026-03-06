@@ -105,3 +105,14 @@
 {"ts":"2026-03-06T22:15:36Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/configHandlers.ts"}
 {"ts":"2026-03-06T22:15:41Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/configHandlers.ts"}
 {"ts":"2026-03-06T22:15:47Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-06T22:15:57Z","phase":"build","event":"test_result","result":"pass"}
+{"ts": "2026-03-06T22:16:15Z", "phase": "build", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-06T22:16:15Z", "phase": "build", "event": "phase_end", "detail": "attempt=2"}
+{"ts": "2026-03-06T22:16:21Z", "phase": "pipeline", "event": "independent_test_passed", "detail": "baseline=10,current=10,tolerance=3"}
+{"ts": "2026-03-06T22:16:21Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=build,result=GATE: ADVANCE to review"}
+{"ts": "2026-03-06T22:16:21Z", "phase": "review", "event": "phase_start", "detail": "attempt=2"}
+{"ts": "2026-03-06T22:18:24Z", "phase": "review", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-06T22:18:24Z", "phase": "review", "event": "phase_end", "detail": "attempt=2"}
+{"ts": "2026-03-06T22:18:24Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=review,result=GATE: ADVANCE to test"}
+{"ts": "2026-03-06T22:18:24Z", "phase": "test", "event": "phase_start", "detail": "attempt=1"}
+{"ts":"2026-03-06T22:19:00Z","phase":"test","event":"test_result","result":"pass"}
