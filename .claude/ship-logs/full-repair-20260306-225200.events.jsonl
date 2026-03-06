@@ -80,3 +80,15 @@
 {"ts":"2026-03-06T22:09:01Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/optimizationHandlers.ts"}
 {"ts":"2026-03-06T22:09:04Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/optimizationHandlers.ts"}
 {"ts":"2026-03-06T22:09:09Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/validationHandlers.ts"}
+{"ts":"2026-03-06T22:09:16Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/validationHandlers.ts"}
+{"ts":"2026-03-06T22:09:25Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/advancedOptimizationHandlers.ts"}
+{"ts":"2026-03-06T22:09:31Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/advancedOptimizationHandlers.ts"}
+{"ts":"2026-03-06T22:09:42Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-06T22:09:49Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/tests/unit/pathTraversal.test.ts"}
+{"ts":"2026-03-06T22:09:57Z","phase":"build","event":"test_result","result":"fail"}
+{"ts":"2026-03-06T22:10:14Z","phase":"build","event":"test_result","result":"pass"}
+{"ts": "2026-03-06T22:10:38Z", "phase": "build", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-06T22:10:38Z", "phase": "build", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-06T22:10:44Z", "phase": "pipeline", "event": "independent_test_passed", "detail": "baseline=10,current=10,tolerance=3"}
+{"ts": "2026-03-06T22:10:44Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=build,result=GATE: ADVANCE to review"}
+{"ts": "2026-03-06T22:10:44Z", "phase": "review", "event": "phase_start", "detail": "attempt=1"}
