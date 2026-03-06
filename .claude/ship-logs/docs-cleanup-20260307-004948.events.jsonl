@@ -16,3 +16,4 @@
 {"ts": "2026-03-06T23:53:19Z", "phase": "reproduce", "event": "integrity_warning", "detail": "unexpected_change=/home/jg/repos/pob-mcp-worktrees/docs-cleanup/.claude/workflow-state/verify/suite-passed.txt"}
 {"ts": "2026-03-06T23:53:19Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=reproduce,result=GATE: ADVANCE to build"}
 {"ts": "2026-03-06T23:53:19Z", "phase": "build", "event": "phase_start", "detail": "attempt=1"}
+{"ts":"2026-03-06T23:55:25Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
