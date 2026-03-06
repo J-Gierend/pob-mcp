@@ -92,3 +92,16 @@
 {"ts": "2026-03-06T22:10:44Z", "phase": "pipeline", "event": "independent_test_passed", "detail": "baseline=10,current=10,tolerance=3"}
 {"ts": "2026-03-06T22:10:44Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=build,result=GATE: ADVANCE to review"}
 {"ts": "2026-03-06T22:10:44Z", "phase": "review", "event": "phase_start", "detail": "attempt=1"}
+{"ts": "2026-03-06T22:12:57Z", "phase": "review", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-06T22:12:57Z", "phase": "review", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-06T22:12:57Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=review,result=GATE: LOOPBACK to build because 1 issues found in review"}
+{"ts": "2026-03-06T22:12:57Z", "phase": "pipeline", "event": "gate_loopback", "detail": "from=review,to=build,count=1,reason=1 issues found in review"}
+{"ts": "2026-03-06T22:12:57Z", "phase": "build", "event": "phase_start", "detail": "attempt=2"}
+{"ts":"2026-03-06T22:13:50Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/tests/unit/configHandlers.test.ts"}
+{"ts":"2026-03-06T22:13:58Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-06T22:14:23Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/tests/unit/configHandlers.test.ts"}
+{"ts":"2026-03-06T22:15:00Z","phase":"build","event":"test_result","result":"fail"}
+{"ts":"2026-03-06T22:15:19Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/tests/run_config_test.sh"}
+{"ts":"2026-03-06T22:15:36Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/configHandlers.ts"}
+{"ts":"2026-03-06T22:15:41Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/full-repair/src/handlers/configHandlers.ts"}
+{"ts":"2026-03-06T22:15:47Z","phase":"build","event":"test_result","result":"pass"}
