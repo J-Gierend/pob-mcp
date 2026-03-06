@@ -116,3 +116,15 @@
 {"ts": "2026-03-06T22:18:24Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=review,result=GATE: ADVANCE to test"}
 {"ts": "2026-03-06T22:18:24Z", "phase": "test", "event": "phase_start", "detail": "attempt=1"}
 {"ts":"2026-03-06T22:19:00Z","phase":"test","event":"test_result","result":"pass"}
+{"ts": "2026-03-06T22:19:22Z", "phase": "test", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-06T22:19:22Z", "phase": "test", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-06T22:19:22Z", "phase": "test", "event": "integrity_warning", "detail": "unexpected_change=/home/jg/repos/pob-mcp-worktrees/full-repair/.claude/workflow-state/verify/suite-passed.txt"}
+{"ts": "2026-03-06T22:19:28Z", "phase": "pipeline", "event": "independent_test_passed", "detail": "baseline=10,current=10,tolerance=3"}
+{"ts": "2026-03-06T22:19:28Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=test,result=GATE: ADVANCE to srt"}
+{"ts": "2026-03-06T22:19:28Z", "phase": "srt", "event": "phase_start", "detail": "attempt=1"}
+{"ts":"2026-03-06T22:19:40Z","phase":"harness","event":"rate_limited","detail":"attempt=1,backoff=60s"}
+{"ts": "2026-03-06T22:22:00Z", "phase": "srt", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-06T22:22:00Z", "phase": "srt", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-06T22:22:07Z", "phase": "pipeline", "event": "independent_test_passed", "detail": "baseline=10,current=10,tolerance=3"}
+{"ts": "2026-03-06T22:22:07Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=srt,result=GATE: ADVANCE to ship"}
+{"ts": "2026-03-06T22:22:07Z", "phase": "ship", "event": "phase_start", "detail": "attempt=1"}
