@@ -1,0 +1,10 @@
+{"ts": "2026-03-06T21:52:00Z", "phase": "init", "event": "worktree_ready", "detail": "/home/jg/repos/pob-mcp-worktrees/full-repair"}
+{"ts": "2026-03-06T21:52:00Z", "phase": "pipeline", "event": "transcript_started", "detail": "/tmp/ship-transcripts/ship-d1e7d3dc-full-repair-20260306-225200.transcript.log"}
+{"ts": "2026-03-06T21:52:00Z", "phase": "init", "event": "plan_copied", "detail": "01-full-repair.md"}
+{"ts": "2026-03-06T21:52:00Z", "phase": "init", "event": "project_type", "detail": "server"}
+{"ts": "2026-03-06T21:52:07Z", "phase": "pipeline", "event": "baseline_test_result", "detail": "failures=10,exit=1"}
+{"ts": "2026-03-06T21:52:07Z", "phase": "pipeline", "event": "plan_source", "detail": "file=/home/jg/repos/pob-mcp/plans/01-full-repair.md"}
+{"ts": "2026-03-06T21:52:07Z", "phase": "pipeline", "event": "state_machine_start", "detail": "phases=plan reproduce build review test srt ship,task_type=bugfix,project_type=server,pipeline_version=2.0"}
+{"ts": "2026-03-06T21:52:07Z", "phase": "plan", "event": "phase_start", "detail": "attempt=1"}
+{"ts":"2026-03-06T21:52:41Z","phase":"plan","event":"test_result","result":"pass"}
+{"ts":"2026-03-06T21:52:57Z","phase":"plan","event":"test_result","result":"fail"}
