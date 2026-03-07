@@ -61,3 +61,5 @@
 {"ts": "2026-03-07T00:23:58Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=review,result=GATE: LOOPBACK to build because 1 issues found in review"}
 {"ts": "2026-03-07T00:23:58Z", "phase": "pipeline", "event": "gate_loopback", "detail": "from=review,to=build,count=2,reason=1 issues found in review"}
 {"ts": "2026-03-07T00:23:58Z", "phase": "build", "event": "phase_start", "detail": "attempt=2"}
+{"ts":"2026-03-07T00:24:46Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/unit/docsCleanup.test.ts"}
+{"ts":"2026-03-07T00:25:27Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
