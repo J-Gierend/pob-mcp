@@ -33,3 +33,8 @@
 {"ts":"2026-03-07T00:13:17Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_tdd_gate.sh"}
 {"ts":"2026-03-07T00:13:21Z","phase":"build","event":"test_result","result":"fail"}
 {"ts":"2026-03-07T00:15:36Z","phase":"build","event":"test_result","result":"fail"}
+{"ts":"2026-03-07T00:16:38Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/types/optimization.ts"}
+{"ts":"2026-03-07T00:16:53Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/server/toolRouter.ts"}
+{"ts":"2026-03-07T00:16:54Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/server/toolRouter.ts"}
+{"ts":"2026-03-07T00:17:01Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/handlers/optimizationHandlers.ts"}
+{"ts":"2026-03-07T00:17:07Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/server/responseUtils.ts"}
