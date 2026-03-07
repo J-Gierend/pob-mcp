@@ -91,3 +91,11 @@
 {"ts": "2026-03-07T00:32:49Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=test,result=GATE: ADVANCE to srt"}
 {"ts": "2026-03-07T00:32:50Z", "phase": "srt", "event": "phase_start", "detail": "attempt=1"}
 {"ts":"2026-03-07T00:33:02Z","phase":"harness","event":"rate_limited","detail":"attempt=1,backoff=60s"}
+{"ts": "2026-03-07T00:34:32Z", "phase": "srt", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-07T00:34:32Z", "phase": "srt", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-07T00:34:38Z", "phase": "pipeline", "event": "independent_test_passed", "detail": ""}
+{"ts": "2026-03-07T00:34:38Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=srt,result=GATE: ADVANCE to ship"}
+{"ts": "2026-03-07T00:34:38Z", "phase": "ship", "event": "phase_start", "detail": "attempt=1"}
+{"ts": "2026-03-07T00:36:06Z", "phase": "ship", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-07T00:36:06Z", "phase": "ship", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-07T00:36:06Z", "phase": "pipeline", "event": "complete", "detail": "phases_completed=plan reproduce build review test srt ship"}
