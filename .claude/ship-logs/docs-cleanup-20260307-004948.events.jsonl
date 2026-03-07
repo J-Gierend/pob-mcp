@@ -52,3 +52,7 @@
 {"ts": "2026-03-07T00:20:20Z", "phase": "pipeline", "event": "independent_test_passed", "detail": ""}
 {"ts": "2026-03-07T00:20:20Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=build,result=GATE: ADVANCE to review"}
 {"ts": "2026-03-07T00:20:20Z", "phase": "review", "event": "phase_start", "detail": "attempt=1"}
+{"ts": "2026-03-07T00:20:57Z", "phase": "review", "event": "harness_exit", "detail": "exit_code=1"}
+{"ts": "2026-03-07T00:20:57Z", "phase": "review", "event": "phase_incomplete", "detail": "no marker"}
+{"ts": "2026-03-07T00:20:57Z", "phase": "pipeline", "event": "gate_loopback", "detail": "from=review,to=review,count=1"}
+{"ts": "2026-03-07T00:20:57Z", "phase": "review", "event": "phase_start", "detail": "attempt=2"}
