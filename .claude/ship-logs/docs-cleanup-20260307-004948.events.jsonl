@@ -56,3 +56,8 @@
 {"ts": "2026-03-07T00:20:57Z", "phase": "review", "event": "phase_incomplete", "detail": "no marker"}
 {"ts": "2026-03-07T00:20:57Z", "phase": "pipeline", "event": "gate_loopback", "detail": "from=review,to=review,count=1"}
 {"ts": "2026-03-07T00:20:57Z", "phase": "review", "event": "phase_start", "detail": "attempt=2"}
+{"ts": "2026-03-07T00:23:58Z", "phase": "review", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-07T00:23:58Z", "phase": "review", "event": "phase_end", "detail": "attempt=2"}
+{"ts": "2026-03-07T00:23:58Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=review,result=GATE: LOOPBACK to build because 1 issues found in review"}
+{"ts": "2026-03-07T00:23:58Z", "phase": "pipeline", "event": "gate_loopback", "detail": "from=review,to=build,count=2,reason=1 issues found in review"}
+{"ts": "2026-03-07T00:23:58Z", "phase": "build", "event": "phase_start", "detail": "attempt=2"}
