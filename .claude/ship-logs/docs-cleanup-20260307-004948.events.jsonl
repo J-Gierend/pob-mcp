@@ -63,3 +63,17 @@
 {"ts": "2026-03-07T00:23:58Z", "phase": "build", "event": "phase_start", "detail": "attempt=2"}
 {"ts":"2026-03-07T00:24:46Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/unit/docsCleanup.test.ts"}
 {"ts":"2026-03-07T00:25:27Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
+{"ts":"2026-03-07T00:28:13Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_stale_dispatch.sh"}
+{"ts":"2026-03-07T00:28:16Z","phase":"build","event":"test_result","result":"fail"}
+{"ts":"2026-03-07T00:28:24Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/server/toolRouter.ts"}
+{"ts":"2026-03-07T00:28:32Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/server/toolRouter.ts"}
+{"ts":"2026-03-07T00:28:35Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-07T00:28:37Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-07T00:28:42Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-07T00:28:53Z","phase":"build","event":"test_result","result":"pass"}
+{"ts": "2026-03-07T00:29:12Z", "phase": "build", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-07T00:29:12Z", "phase": "build", "event": "phase_end", "detail": "attempt=2"}
+{"ts": "2026-03-07T00:29:18Z", "phase": "pipeline", "event": "independent_test_passed", "detail": ""}
+{"ts": "2026-03-07T00:29:18Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=build,result=GATE: ADVANCE to review"}
+{"ts": "2026-03-07T00:29:18Z", "phase": "review", "event": "phase_start", "detail": "attempt=3"}
+{"ts":"2026-03-07T00:29:20Z","event":"failed","detail":"dead_agent_detected"}
