@@ -2,9 +2,10 @@
  * Tool Routing Module
  *
  * Routes MCP tool calls to their corresponding handlers with proper context.
+ * Uses a dispatch table instead of a switch statement.
  */
 
-import type { OptimizationConstraints } from "../treeOptimizer.js";
+import type { OptimizationConstraints } from "../types/optimization.js";
 import type { ToolGate } from "./toolGate.js";
 import type { ContextBuilder } from "../utils/contextBuilder.js";
 import type { TradeApiClient } from "../services/tradeClient.js";
@@ -27,7 +28,7 @@ import { handleExportBuild, handleSaveTree, handleSnapshotBuild, handleListSnaps
 import { handleAnalyzeSkillLinks, handleSuggestSupportGems, handleCompareGemSetups, handleValidateGemQuality, handleFindOptimalLinks, handleGemUpgradePath } from "../handlers/skillGemHandlers.js";
 import { handleSearchTradeItems, handleGetItemPrice, handleGetLeagues, handleSearchStats, handleFindItemUpgrades, handleFindResistanceGear, handleCompareTradeItems } from "../handlers/tradeHandlers.js";
 import { handleGetCurrencyRates, handleFindArbitrage, handleCalculateTradingProfit } from "../handlers/poeNinjaHandlers.js";
-import { handleSearchClusterJewels, handleAnalyzeClusterJewels, handleAnalyzeBuildClusterJewels } from "../handlers/clusterJewelHandlers.js";
+import { handleSearchClusterJewels, handleAnalyzeBuildClusterJewels } from "../handlers/clusterJewelHandlers.js";
 import { handleGenerateShoppingList } from "../handlers/shoppingListHandlers.js";
 import { handlePlanLeveling } from "../handlers/levelingHandlers.js";
 import { handleCheckBossReadiness } from "../handlers/bossReadinessHandlers.js";
@@ -44,12 +45,484 @@ export interface ToolRouterDependencies {
   ensureLuaClient: () => Promise<void>;
 }
 
-export type ToolResponse = Promise<{
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
+type ToolHandler = (args: Record<string, unknown> | undefined, deps: ToolRouterDependencies) => Promise<{
+  content: Array<{ type: string; text: string }>;
 }>;
+
+function requireArgs(args: Record<string, unknown> | undefined): Record<string, unknown> {
+  if (!args) throw new Error("Missing arguments");
+  return args;
+}
+
+function requireTradeClient(deps: ToolRouterDependencies): TradeApiClient {
+  if (!deps.tradeClient) {
+    throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
+  }
+  return deps.tradeClient;
+}
+
+function buildTradeContext(deps: ToolRouterDependencies) {
+  return {
+    tradeClient: requireTradeClient(deps),
+    statMapper: deps.statMapper || undefined,
+    ninjaClient: deps.ninjaClient,
+  };
+}
+
+function luaBridgeContext(deps: ToolRouterDependencies) {
+  return {
+    getLuaClient: deps.getLuaClient,
+    ensureLuaClient: deps.ensureLuaClient,
+  };
+}
+
+const toolRegistry = new Map<string, ToolHandler>([
+  // Build tools
+  ["list_builds", (args, deps) =>
+    handleListBuilds(deps.contextBuilder.buildHandlerContext())],
+  ["analyze_build", (args, deps) => {
+    const a = requireArgs(args);
+    return handleAnalyzeBuild(deps.contextBuilder.buildHandlerContext(), a.build_name as string);
+  }],
+  ["compare_builds", (args, deps) => {
+    const a = requireArgs(args);
+    return handleCompareBuilds(deps.contextBuilder.buildHandlerContext(), a.build1 as string, a.build2 as string);
+  }],
+  ["get_build_stats", (args, deps) => {
+    const a = requireArgs(args);
+    return handleGetBuildStats(deps.contextBuilder.buildHandlerContext(), a.build_name as string);
+  }],
+  ["get_build_notes", (args, deps) => {
+    if (!args?.build_name) throw new Error("Missing build_name");
+    return handleGetBuildNotes(deps.contextBuilder.buildHandlerContext(), args.build_name as string);
+  }],
+  ["set_build_notes", (args, deps) => {
+    if (!args?.build_name) throw new Error("Missing build_name");
+    if (args?.notes == null) throw new Error("Missing notes");
+    return handleSetBuildNotes(deps.contextBuilder.buildHandlerContext(), args.build_name as string, args.notes as string);
+  }],
+
+  // Watch tools
+  ["start_watching", (args, deps) =>
+    Promise.resolve(handleStartWatching(deps.contextBuilder.buildWatchContext()))],
+  ["stop_watching", (args, deps) =>
+    handleStopWatching(deps.contextBuilder.buildWatchContext())],
+  ["get_recent_changes", (args, deps) =>
+    Promise.resolve(handleGetRecentChanges(deps.contextBuilder.buildWatchContext(), args?.limit as number | undefined))],
+  ["watch_status", (args, deps) =>
+    Promise.resolve(handleWatchStatus(deps.contextBuilder.buildWatchContext()))],
+  ["refresh_tree_data", (args, deps) =>
+    handleRefreshTreeData(deps.contextBuilder.buildWatchContext(), args?.version as string | undefined)],
+
+  // Tree tools
+  ["compare_trees", (args, deps) => {
+    const a = requireArgs(args);
+    return handleCompareTrees(deps.contextBuilder.buildTreeContext(), a.build1 as string, a.build2 as string);
+  }],
+  ["get_nearby_nodes", (args, deps) =>
+    handleGetNearbyNodes(
+      deps.contextBuilder.buildTreeContext(),
+      args?.build_name as string | undefined,
+      args?.max_distance as number | undefined,
+      args?.filter as string | undefined,
+    )],
+  ["find_path_to_node", (args, deps) => {
+    const a = requireArgs(args);
+    return handleFindPath(deps.contextBuilder.buildTreeContext(), a.build_name as string, a.target_node_id as string, a.show_alternatives as boolean | undefined);
+  }],
+
+  // Lua bridge tools
+  ["lua_start", (args, deps) =>
+    handleLuaStart(deps.contextBuilder.buildLuaContext())],
+  ["lua_stop", (args, deps) =>
+    handleLuaStop(deps.contextBuilder.buildLuaContext())],
+  ["lua_new_build", (args, deps) =>
+    handleLuaNewBuild(deps.contextBuilder.buildLuaContext(), args?.class_name as string | undefined, args?.ascendancy as string | undefined)],
+  ["lua_save_build", (args, deps) => {
+    const a = requireArgs(args);
+    return handleLuaSaveBuild(deps.contextBuilder.buildLuaContext(), a.build_name as string);
+  }],
+  ["lua_load_build", (args, deps) => {
+    const a = requireArgs(args);
+    return handleLuaLoadBuild(deps.contextBuilder.buildLuaContext(), a.build_name as string | undefined, a.build_xml as string | undefined, a.name as string | undefined);
+  }],
+  ["set_character_level", async (args, deps) => {
+    const a = requireArgs(args);
+    const level = a.level as number;
+    if (!level || level < 1 || level > 100) throw new Error("level must be between 1 and 100");
+    await deps.ensureLuaClient();
+    const luaClient = deps.getLuaClient();
+    if (!luaClient) throw new Error("Lua bridge not active. Use lua_start first.");
+    await luaClient.setLevel(level);
+    const stats = await luaClient.getStats(['Life', 'EnergyShield', 'Mana', 'ManaUnreserved']);
+    return {
+      content: [{
+        type: "text" as const,
+        text: `✅ Character level set to ${level}.\n\nUpdated stats:\n  Life: ${stats.Life ?? '-'}  |  ES: ${stats.EnergyShield ?? '-'}  |  Mana: ${stats.Mana ?? '-'}  |  Mana Unreserved: ${stats.ManaUnreserved ?? '-'}`,
+      }],
+    };
+  }],
+  ["lua_get_stats", (args, deps) =>
+    handleLuaGetStats(deps.contextBuilder.buildLuaContext(), args?.category as string | undefined)],
+  ["lua_get_tree", (args, deps) =>
+    handleLuaGetTree(deps.contextBuilder.buildLuaContext(), args?.include_node_ids as boolean | undefined)],
+  ["lua_get_build_info", (args, deps) =>
+    handleLuaGetBuildInfo(deps.contextBuilder.buildLuaContext())],
+  ["lua_reload_build", (args, deps) =>
+    handleLuaReloadBuild(deps.contextBuilder.buildLuaContext(), args?.build_name as string | undefined)],
+  ["update_tree_delta", (args, deps) => {
+    const a = requireArgs(args);
+    return handleUpdateTreeDelta(deps.contextBuilder.buildLuaContext(), a.add_nodes as string[] | undefined, a.remove_nodes as string[] | undefined);
+  }],
+  ["create_spec", (args, deps) =>
+    handleCreateSpec(deps.contextBuilder.buildLuaContext(), args?.title as string | undefined, args?.copyFrom as number | undefined, args?.activate as boolean | undefined)],
+  ["list_specs", (args, deps) =>
+    handleListSpecs(deps.contextBuilder.buildLuaContext())],
+  ["select_spec", (args, deps) => {
+    if (args?.index == null) throw new Error("Missing index");
+    return handleSelectSpec(deps.contextBuilder.buildLuaContext(), args.index as number);
+  }],
+  ["delete_spec", (args, deps) => {
+    if (args?.index == null) throw new Error("Missing index");
+    return handleDeleteSpec(deps.contextBuilder.buildLuaContext(), args.index as number);
+  }],
+  ["rename_spec", (args, deps) => {
+    if (!args?.index || !args?.title) throw new Error("Missing index or title");
+    return handleRenameSpec(deps.contextBuilder.buildLuaContext(), args.index as number, args.title as string);
+  }],
+  ["list_item_sets", (args, deps) =>
+    handleListItemSets(deps.contextBuilder.buildLuaContext())],
+  ["select_item_set", (args, deps) => {
+    if (args?.id == null) throw new Error("Missing id");
+    return handleSelectItemSet(deps.contextBuilder.buildLuaContext(), args.id as number);
+  }],
+
+  // Configuration tools
+  ["get_config", (args, deps) =>
+    handleGetConfig(luaBridgeContext(deps))],
+  ["set_config", (args, deps) => {
+    const a = requireArgs(args);
+    return handleSetConfig(luaBridgeContext(deps), {
+      config_name: a.config_name as string,
+      value: a.value as boolean | number | string,
+    });
+  }],
+  ["set_enemy_stats", (args, deps) =>
+    handleSetEnemyStats(luaBridgeContext(deps), {
+      level: args?.level as number | undefined,
+      fire_resist: args?.fire_resist as number | undefined,
+      cold_resist: args?.cold_resist as number | undefined,
+      lightning_resist: args?.lightning_resist as number | undefined,
+      chaos_resist: args?.chaos_resist as number | undefined,
+      armor: args?.armor as number | undefined,
+      evasion: args?.evasion as number | undefined,
+    })],
+  ["save_config_preset", (args, deps) => {
+    if (!args?.name) throw new Error("Missing preset name");
+    return handleSaveConfigPreset(deps.contextBuilder.buildConfigPresetContext(), args.name as string);
+  }],
+  ["load_config_preset", (args, deps) => {
+    if (!args?.name) throw new Error("Missing preset name");
+    return handleLoadConfigPreset(deps.contextBuilder.buildConfigPresetContext(), args.name as string);
+  }],
+  ["list_config_presets", (args, deps) =>
+    handleListConfigPresets(deps.contextBuilder.buildConfigPresetContext())],
+  ["lua_set_tree", (args, deps) => {
+    const a = requireArgs(args);
+    return handleLuaSetTree(deps.contextBuilder.buildLuaContext(), a);
+  }],
+  ["search_tree_nodes", (args, deps) => {
+    const a = requireArgs(args);
+    const searchQuery = (a.query ?? a.keyword ?? a.q) as string | undefined;
+    if (!searchQuery || String(searchQuery).trim().length === 0) {
+      throw new Error(`search_tree_nodes requires a 'query' parameter (received args: ${JSON.stringify(Object.keys(a))})`);
+    }
+    return handleSearchTreeNodes(
+      deps.contextBuilder.buildLuaContext(),
+      String(searchQuery).trim(),
+      a.node_type as string | undefined,
+      (a.limit || a.max_results) as number | undefined,
+      a.include_allocated as boolean | undefined,
+    );
+  }],
+
+  // Item & Skill tools
+  ["add_item", (args, deps) => {
+    const a = requireArgs(args);
+    return handleAddItem(deps.contextBuilder.buildItemSkillContext(), a.item_text as string, a.slot_name as string | undefined, a.no_auto_equip as boolean | undefined);
+  }],
+  ["get_equipped_items", (args, deps) =>
+    handleGetEquippedItems(deps.contextBuilder.buildItemSkillContext())],
+  ["toggle_flask", (args, deps) => {
+    const a = requireArgs(args);
+    return handleToggleFlask(deps.contextBuilder.buildItemSkillContext(), a.flask_number as number, a.active as boolean);
+  }],
+  ["get_skill_setup", (args, deps) =>
+    handleGetSkillSetup(deps.contextBuilder.buildItemSkillContext(), args?.main_only !== false)],
+  ["set_main_skill", (args, deps) => {
+    const a = requireArgs(args);
+    return handleSetMainSkill(deps.contextBuilder.buildItemSkillContext(), a.group_index as number, (a.active_skill_index ?? a.gem_index) as number | undefined, a.skill_part as number | undefined);
+  }],
+  ["create_socket_group", (args, deps) =>
+    handleCreateSocketGroup(deps.contextBuilder.buildItemSkillContext(), args?.label as string | undefined, args?.slot as string | undefined, args?.enabled as boolean | undefined, args?.include_in_full_dps as boolean | undefined)],
+  ["add_gem", (args, deps) => {
+    const a = requireArgs(args);
+    return handleAddGem(deps.contextBuilder.buildItemSkillContext(), a.group_index as number, a.gem_name as string, a.level as number | undefined, a.quality as number | undefined, (a.quality_type ?? a.quality_id) as string | undefined, a.enabled as boolean | undefined);
+  }],
+  ["set_gem_level", (args, deps) => {
+    const a = requireArgs(args);
+    return handleSetGemLevel(deps.contextBuilder.buildItemSkillContext(), a.group_index as number, a.gem_index as number, a.level as number);
+  }],
+  ["set_gem_quality", (args, deps) => {
+    const a = requireArgs(args);
+    return handleSetGemQuality(deps.contextBuilder.buildItemSkillContext(), a.group_index as number, a.gem_index as number, a.quality as number, (a.quality_type ?? a.quality_id) as string | undefined);
+  }],
+  ["remove_skill", (args, deps) => {
+    const a = requireArgs(args);
+    return handleRemoveSkill(deps.contextBuilder.buildItemSkillContext(), a.group_index as number);
+  }],
+  ["remove_gem", (args, deps) => {
+    const a = requireArgs(args);
+    return handleRemoveGem(deps.contextBuilder.buildItemSkillContext(), a.group_index as number, a.gem_index as number);
+  }],
+  ["setup_skill_with_gems", (args, deps) => {
+    const a = requireArgs(args);
+    const activeGemName = a.active_gem as string | undefined;
+    const supportGemNames = a.support_gems as string[] | undefined;
+    if (!activeGemName) throw new Error("active_gem is required");
+    const gemsArray: Array<{name: string}> = [
+      { name: activeGemName },
+      ...(supportGemNames || []).map((n: string) => ({ name: n })),
+    ];
+    return handleSetupSkillWithGems(
+      deps.contextBuilder.buildItemSkillContext(),
+      gemsArray,
+      a.label as string | undefined,
+      a.slot as string | undefined,
+      a.enabled as boolean | undefined,
+      a.include_in_full_dps as boolean | undefined,
+    );
+  }],
+  ["add_multiple_items", (args, deps) => {
+    const a = requireArgs(args);
+    return handleAddMultipleItems(deps.contextBuilder.buildItemSkillContext(), a.items as Array<{item_text: string; slot_name?: string}>);
+  }],
+
+  // Build Optimization tools
+  ["analyze_defenses", (args, deps) =>
+    handleAnalyzeDefenses(deps.contextBuilder.buildOptimizationContext(), args?.build_name as string | undefined)],
+  ["suggest_optimal_nodes", (args, deps) => {
+    const a = requireArgs(args);
+    return handleSuggestOptimalNodes(deps.contextBuilder.buildOptimizationContext(), a.build_name as string, a.goal as string, (a.points_available || a.max_points) as number | undefined);
+  }],
+  ["optimize_tree", (args, deps) => {
+    const a = requireArgs(args);
+    return handleOptimizeTree(deps.contextBuilder.buildOptimizationContext(), a.build_name as string, a.goal as string, a.max_points as number | undefined, a.max_iterations as number | undefined, a.constraints as OptimizationConstraints | undefined);
+  }],
+  ["analyze_items", (args, deps) =>
+    handleAnalyzeItems(deps.contextBuilder.buildAdvancedOptimizationContext(), args?.build_name as string | undefined)],
+  ["optimize_skill_links", (args, deps) =>
+    handleOptimizeSkillLinks(deps.contextBuilder.buildAdvancedOptimizationContext(), args?.build_name as string | undefined)],
+  ["create_budget_build", (args, deps) => {
+    const a = requireArgs(args);
+    return handleCreateBudgetBuild(deps.contextBuilder.buildAdvancedOptimizationContext(), a.build_name as string, (a.budget_tier || 'league-start') as string);
+  }],
+
+  // Build Validation
+  ["validate_build", (args, deps) =>
+    handleValidateBuild(deps.contextBuilder.buildValidationContext(), { build_name: args?.build_name as string | undefined })],
+
+  // Export and Persistence tools
+  ["export_build", (args, deps) => {
+    const a = requireArgs(args);
+    return handleExportBuild(deps.contextBuilder.buildExportContext(), {
+      build_name: a.build_name as string,
+      output_name: a.output_name as string,
+      output_directory: a.output_directory as string | undefined,
+      overwrite: a.overwrite as boolean | undefined,
+      notes: a.notes as string | undefined,
+    });
+  }],
+  ["save_tree", (args, deps) => {
+    const a = requireArgs(args);
+    return handleSaveTree(deps.contextBuilder.buildExportContext(), {
+      build_name: a.build_name as string,
+      nodes: a.nodes as string[],
+      mastery_effects: a.mastery_effects as Record<string, number> | undefined,
+      backup: a.backup as boolean | undefined,
+    });
+  }],
+  ["snapshot_build", (args, deps) => {
+    const a = requireArgs(args);
+    return handleSnapshotBuild(deps.contextBuilder.buildExportContext(), {
+      build_name: a.build_name as string,
+      description: a.description as string | undefined,
+      tag: a.tag as string | undefined,
+    });
+  }],
+  ["list_snapshots", (args, deps) => {
+    const a = requireArgs(args);
+    return handleListSnapshots(deps.contextBuilder.buildExportContext(), {
+      build_name: a.build_name as string,
+      limit: a.limit as number | undefined,
+      tag_filter: a.tag_filter as string | undefined,
+    });
+  }],
+  ["restore_snapshot", (args, deps) => {
+    const a = requireArgs(args);
+    return handleRestoreSnapshot(deps.contextBuilder.buildExportContext(), {
+      build_name: a.build_name as string,
+      snapshot_id: a.snapshot_id as string,
+      backup_current: a.backup_current as boolean | undefined,
+    });
+  }],
+  ["export_build_summary", (args, deps) =>
+    handleExportBuildSummary(deps.contextBuilder.buildExportContext())],
+
+  // Skill Gem Analysis tools
+  ["analyze_skill_links", (args, deps) =>
+    handleAnalyzeSkillLinks(deps.contextBuilder.buildSkillGemContext(), args)],
+  ["suggest_support_gems", (args, deps) =>
+    handleSuggestSupportGems(deps.contextBuilder.buildSkillGemContext(), args)],
+  ["compare_gem_setups", (args, deps) => {
+    const a = requireArgs(args);
+    return handleCompareGemSetups(deps.contextBuilder.buildSkillGemContext(), {
+      build_name: a.build_name as string,
+      skill_index: a.skill_index as number | undefined,
+      setups: a.setups as Array<{ name: string; gems: string[] }>,
+    });
+  }],
+  ["validate_gem_quality", (args, deps) =>
+    handleValidateGemQuality(deps.contextBuilder.buildSkillGemContext(), args)],
+  ["find_optimal_links", (args, deps) => {
+    const a = requireArgs(args);
+    return handleFindOptimalLinks(deps.contextBuilder.buildSkillGemContext(), {
+      build_name: a.build_name as string,
+      skill_index: a.skill_index as number | undefined,
+      link_count: a.link_count as number,
+      budget: a.budget as "league_start" | "mid_league" | "endgame" | undefined,
+      optimize_for: a.optimize_for as "dps" | "clear_speed" | "bossing" | "defense" | undefined,
+    });
+  }],
+  ["gem_upgrade_path", (args, deps) =>
+    handleGemUpgradePath(deps.contextBuilder.buildSkillGemContext(), args || {})],
+
+  // Trade API tools
+  ["search_trade_items", (args, deps) => {
+    const a = requireArgs(args);
+    if (!a.league) throw new Error("Missing required argument: league");
+    return handleSearchTradeItems(buildTradeContext(deps), a as any);
+  }],
+  ["get_item_price", (args, deps) => {
+    const a = requireArgs(args);
+    return handleGetItemPrice(buildTradeContext(deps), {
+      item_name: a.item_name as string,
+      league: a.league as string | undefined,
+      item_type: a.item_type as string | undefined,
+      rarity: a.rarity as "unique" | "rare" | "magic" | "normal" | undefined,
+    });
+  }],
+  ["get_leagues", (args, deps) => {
+    requireTradeClient(deps);
+    return handleGetLeagues(buildTradeContext(deps));
+  }],
+  ["search_stats", (args, deps) => {
+    if (!deps.tradeClient || !deps.statMapper) {
+      throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
+    }
+    const a = requireArgs(args);
+    return handleSearchStats({
+      tradeClient: deps.tradeClient,
+      statMapper: deps.statMapper,
+      ninjaClient: deps.ninjaClient,
+    }, {
+      query: a.query as string,
+      limit: a.limit as number | undefined,
+    });
+  }],
+  ["find_item_upgrades", (args, deps) => {
+    if (!deps.tradeClient || !deps.recommendationEngine) {
+      throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
+    }
+    const a = requireArgs(args);
+    return handleFindItemUpgrades({
+      ...buildTradeContext(deps),
+      recommendationEngine: deps.recommendationEngine,
+    }, a as any);
+  }],
+  ["find_resistance_gear", (args, deps) => {
+    if (!deps.tradeClient || !deps.recommendationEngine) {
+      throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
+    }
+    const a = requireArgs(args);
+    return handleFindResistanceGear({
+      ...buildTradeContext(deps),
+      recommendationEngine: deps.recommendationEngine,
+    }, a as any);
+  }],
+  ["compare_trade_items", (args, deps) => {
+    const a = requireArgs(args);
+    return handleCompareTradeItems({
+      ...buildTradeContext(deps),
+      recommendationEngine: deps.recommendationEngine || undefined,
+    }, a as any);
+  }],
+  ["search_cluster_jewels", (args, deps) => {
+    const a = requireArgs(args);
+    return handleSearchClusterJewels(buildTradeContext(deps), a as any);
+  }],
+  ["generate_shopping_list", (args, deps) => {
+    const a = requireArgs(args);
+    const tc = buildTradeContext(deps);
+    return handleGenerateShoppingList({
+      buildService: deps.contextBuilder.buildHandlerContext().buildService,
+      tradeClient: tc.tradeClient,
+      statMapper: tc.statMapper,
+      ninjaClient: tc.ninjaClient,
+    }, {
+      build_name: a.build_name as string,
+      league: a.league as string,
+      budget: a.budget as 'budget' | 'medium' | 'endgame' | undefined,
+    });
+  }],
+
+  // poe.ninja API tools
+  ["get_currency_rates", (args, deps) => {
+    const a = requireArgs(args);
+    return handleGetCurrencyRates({ ninjaClient: deps.ninjaClient }, a as any);
+  }],
+  ["find_arbitrage", (args, deps) => {
+    const a = requireArgs(args);
+    return handleFindArbitrage({ ninjaClient: deps.ninjaClient }, a as any);
+  }],
+  ["calculate_trading_profit", (args, deps) => {
+    const a = requireArgs(args);
+    return handleCalculateTradingProfit({ ninjaClient: deps.ninjaClient }, a as any);
+  }],
+
+  // Build Goals tools
+  ["get_build_issues", async (args, deps) => {
+    const { issues, stats } = await handleGetBuildIssues(luaBridgeContext(deps));
+    return formatIssuesResponse(issues, stats);
+  }],
+  ["get_passive_upgrades", (args, deps) => {
+    const focus = (args?.focus as 'dps' | 'defence' | 'both') || 'both';
+    const maxResults = (args?.max_results as number) || 10;
+    return handleGetPassiveUpgrades(luaBridgeContext(deps), focus, maxResults);
+  }],
+  ["analyze_build_cluster_jewels", (args, deps) =>
+    handleAnalyzeBuildClusterJewels(luaBridgeContext(deps))],
+  ["suggest_watchers_eye", (args, deps) =>
+    handleSuggestWatchersEye(luaBridgeContext(deps))],
+  ["check_boss_readiness", (args, deps) => {
+    if (!args?.boss) throw new Error("Missing boss name");
+    return handleCheckBossReadiness(luaBridgeContext(deps), args.boss as string);
+  }],
+  ["plan_leveling", (args, deps) =>
+    handlePlanLeveling(luaBridgeContext(deps), args || {})],
+  ["suggest_masteries", (args, deps) =>
+    handleSuggestMasteries(luaBridgeContext(deps))],
+]);
 
 /**
  * Routes a tool call to its handler with appropriate context
@@ -58,675 +531,12 @@ export async function routeToolCall(
   name: string,
   args: Record<string, unknown> | undefined,
   deps: ToolRouterDependencies
-): ToolResponse {
-  // Check tool gate first
+): Promise<{ content: Array<{ type: string; text: string }> }> {
   deps.toolGate.checkGate(name);
 
-  // Create handler contexts using contextBuilder
-  const handlerContext = deps.contextBuilder.buildHandlerContext();
-  const watchContext = deps.contextBuilder.buildWatchContext();
-  const treeContext = deps.contextBuilder.buildTreeContext();
-  const luaContext = deps.contextBuilder.buildLuaContext();
-  const itemSkillContext = deps.contextBuilder.buildItemSkillContext();
-  const optimizationContext = deps.contextBuilder.buildOptimizationContext();
-  const exportContext = deps.contextBuilder.buildExportContext();
-  const skillGemContext = deps.contextBuilder.buildSkillGemContext();
-
-  switch (name) {
-    case "list_builds":
-      return await handleListBuilds(handlerContext);
-
-    case "analyze_build":
-      if (!args) throw new Error("Missing arguments");
-      return await handleAnalyzeBuild(handlerContext, args.build_name as string);
-
-    case "compare_builds":
-      if (!args) throw new Error("Missing arguments");
-      return await handleCompareBuilds(
-        handlerContext,
-        args.build1 as string,
-        args.build2 as string
-      );
-
-    case "get_build_stats":
-      if (!args) throw new Error("Missing arguments");
-      return await handleGetBuildStats(handlerContext, args.build_name as string);
-
-    case "start_watching":
-      return handleStartWatching(watchContext);
-
-    case "stop_watching":
-      return await handleStopWatching(watchContext);
-
-    case "get_recent_changes":
-      return handleGetRecentChanges(watchContext, args?.limit as number | undefined);
-
-    case "watch_status":
-      return handleWatchStatus(watchContext);
-
-    case "refresh_tree_data":
-      return await handleRefreshTreeData(watchContext, args?.version as string | undefined);
-
-    // Phase 3 tools
-    case "compare_trees":
-      if (!args) throw new Error("Missing arguments");
-      return await handleCompareTrees(
-        treeContext,
-        args.build1 as string,
-        args.build2 as string
-      );
-
-    case "get_nearby_nodes":
-      return await handleGetNearbyNodes(
-        treeContext,
-        args?.build_name as string | undefined,
-        args?.max_distance as number | undefined,
-        args?.filter as string | undefined
-      );
-
-    case "find_path_to_node":
-      if (!args) throw new Error("Missing arguments");
-      return await handleFindPath(
-        treeContext,
-        args.build_name as string,
-        args.target_node_id as string,
-        args.show_alternatives as boolean | undefined
-      );
-
-    // Lua bridge tools
-    case "lua_start":
-      return await handleLuaStart(luaContext);
-
-    case "lua_stop":
-      return await handleLuaStop(luaContext);
-
-    case "lua_new_build":
-      return await handleLuaNewBuild(luaContext, args?.class_name as string | undefined, args?.ascendancy as string | undefined);
-
-    case "lua_save_build":
-      if (!args) throw new Error("Missing arguments");
-      return await handleLuaSaveBuild(luaContext, args.build_name as string);
-
-    case "lua_load_build":
-      if (!args) throw new Error("Missing arguments");
-      return await handleLuaLoadBuild(
-        luaContext,
-        args.build_name as string | undefined,
-        args.build_xml as string | undefined,
-        args.name as string | undefined
-      );
-
-    case "set_character_level": {
-      if (!args) throw new Error("Missing arguments");
-      const level = args.level as number;
-      if (!level || level < 1 || level > 100) throw new Error("level must be between 1 and 100");
-      await deps.ensureLuaClient();
-      const luaClient = deps.getLuaClient();
-      if (!luaClient) throw new Error("Lua bridge not active. Use lua_start first.");
-      await luaClient.setLevel(level);
-      const stats = await luaClient.getStats(['Life', 'EnergyShield', 'Mana', 'ManaUnreserved']);
-      return {
-        content: [{
-          type: "text" as const,
-          text: `✅ Character level set to ${level}.\n\nUpdated stats:\n  Life: ${stats.Life ?? '-'}  |  ES: ${stats.EnergyShield ?? '-'}  |  Mana: ${stats.Mana ?? '-'}  |  Mana Unreserved: ${stats.ManaUnreserved ?? '-'}`,
-        }],
-      };
-    }
-
-    case "lua_get_stats":
-      return await handleLuaGetStats(luaContext, args?.category as string | undefined);
-
-    case "lua_get_tree":
-      return await handleLuaGetTree(luaContext, args?.include_node_ids as boolean | undefined);
-
-    case "lua_get_build_info":
-      return await handleLuaGetBuildInfo(luaContext);
-
-    case "lua_reload_build":
-      return await handleLuaReloadBuild(luaContext, args?.build_name as string | undefined);
-
-    case "update_tree_delta":
-      if (!args) throw new Error("Missing arguments");
-      return await handleUpdateTreeDelta(
-        luaContext,
-        args.add_nodes as string[] | undefined,
-        args.remove_nodes as string[] | undefined
-      );
-
-    case "create_spec":
-      return await handleCreateSpec(
-        luaContext,
-        args?.title as string | undefined,
-        args?.copyFrom as number | undefined,
-        args?.activate as boolean | undefined
-      );
-
-    case "list_specs":
-      return await handleListSpecs(luaContext);
-
-    case "select_spec":
-      if (args?.index == null) throw new Error("Missing index");
-      return await handleSelectSpec(luaContext, args.index as number);
-
-    case "delete_spec":
-      if (args?.index == null) throw new Error("Missing index");
-      return await handleDeleteSpec(luaContext, args.index as number);
-
-    case "rename_spec":
-      if (!args?.index || !args?.title) throw new Error("Missing index or title");
-      return await handleRenameSpec(luaContext, args.index as number, args.title as string);
-
-    case "list_item_sets":
-      return await handleListItemSets(luaContext);
-
-    case "select_item_set":
-      if (args?.id == null) throw new Error("Missing id");
-      return await handleSelectItemSet(luaContext, args.id as number);
-
-    // Phase 9: Configuration Tools
-    case "get_config":
-      const getConfigContext = {
-        getLuaClient: deps.getLuaClient,
-        ensureLuaClient: deps.ensureLuaClient,
-      };
-      return await handleGetConfig(getConfigContext);
-
-    case "set_config":
-      if (!args) throw new Error("Missing arguments");
-      const setConfigContext = {
-        getLuaClient: deps.getLuaClient,
-        ensureLuaClient: deps.ensureLuaClient,
-      };
-      return await handleSetConfig(setConfigContext, {
-        config_name: args.config_name as string,
-        value: args.value as boolean | number | string,
-      });
-
-    case "set_enemy_stats":
-      const setEnemyContext = {
-        getLuaClient: deps.getLuaClient,
-        ensureLuaClient: deps.ensureLuaClient,
-      };
-      return await handleSetEnemyStats(setEnemyContext, {
-        level: args?.level as number | undefined,
-        fire_resist: args?.fire_resist as number | undefined,
-        cold_resist: args?.cold_resist as number | undefined,
-        lightning_resist: args?.lightning_resist as number | undefined,
-        chaos_resist: args?.chaos_resist as number | undefined,
-        armor: args?.armor as number | undefined,
-        evasion: args?.evasion as number | undefined,
-      });
-
-    case "save_config_preset":
-      if (!args?.name) throw new Error("Missing preset name");
-      return await handleSaveConfigPreset(deps.contextBuilder.buildConfigPresetContext(), args.name as string);
-
-    case "load_config_preset":
-      if (!args?.name) throw new Error("Missing preset name");
-      return await handleLoadConfigPreset(deps.contextBuilder.buildConfigPresetContext(), args.name as string);
-
-    case "list_config_presets":
-      return await handleListConfigPresets(deps.contextBuilder.buildConfigPresetContext());
-
-    case "lua_set_tree":
-      if (!args) throw new Error("Missing arguments");
-      return await handleLuaSetTree(luaContext, args);
-
-    case "search_tree_nodes": {
-      if (!args) throw new Error("Missing arguments");
-      // Support both 'query' (schema name) and 'keyword' (legacy name)
-      const searchQuery = (args.query ?? args.keyword ?? args.q) as string | undefined;
-      if (!searchQuery || String(searchQuery).trim().length === 0) {
-        throw new Error(`search_tree_nodes requires a 'query' parameter (received args: ${JSON.stringify(Object.keys(args))})`);
-      }
-      return await handleSearchTreeNodes(
-        luaContext,
-        String(searchQuery).trim(),
-        args.node_type as string | undefined,
-        (args.limit || args.max_results) as number | undefined,
-        args.include_allocated as boolean | undefined
-      );
-    }
-
-    // Phase 4: Item & Skill tools
-    case "add_item":
-      if (!args) throw new Error("Missing arguments");
-      return await handleAddItem(itemSkillContext, args.item_text as string, args.slot_name as string | undefined, args.no_auto_equip as boolean | undefined);
-
-    case "get_equipped_items":
-      return await handleGetEquippedItems(itemSkillContext);
-
-    case "toggle_flask":
-      if (!args) throw new Error("Missing arguments");
-      return await handleToggleFlask(itemSkillContext, args.flask_number as number, args.active as boolean);
-
-    case "get_skill_setup":
-      return await handleGetSkillSetup(itemSkillContext, args?.main_only !== false);
-
-    case "set_main_skill":
-      if (!args) throw new Error("Missing arguments");
-      return await handleSetMainSkill(itemSkillContext, args.group_index as number, (args.active_skill_index ?? args.gem_index) as number | undefined, args.skill_part as number | undefined);
-
-    case "create_socket_group":
-      return await handleCreateSocketGroup(itemSkillContext, args?.label as string | undefined, args?.slot as string | undefined, args?.enabled as boolean | undefined, args?.include_in_full_dps as boolean | undefined);
-
-    case "add_gem":
-      if (!args) throw new Error("Missing arguments");
-      return await handleAddGem(itemSkillContext, args.group_index as number, args.gem_name as string, args.level as number | undefined, args.quality as number | undefined, (args.quality_type ?? args.quality_id) as string | undefined, args.enabled as boolean | undefined);
-
-    case "set_gem_level":
-      if (!args) throw new Error("Missing arguments");
-      return await handleSetGemLevel(itemSkillContext, args.group_index as number, args.gem_index as number, args.level as number);
-
-    case "set_gem_quality":
-      if (!args) throw new Error("Missing arguments");
-      return await handleSetGemQuality(itemSkillContext, args.group_index as number, args.gem_index as number, args.quality as number, (args.quality_type ?? args.quality_id) as string | undefined);
-
-    case "remove_skill":
-      if (!args) throw new Error("Missing arguments");
-      return await handleRemoveSkill(itemSkillContext, args.group_index as number);
-
-    case "remove_gem":
-      if (!args) throw new Error("Missing arguments");
-      return await handleRemoveGem(itemSkillContext, args.group_index as number, args.gem_index as number);
-
-    case "setup_skill_with_gems": {
-      if (!args) throw new Error("Missing arguments");
-      // Schema exposes active_gem (string) + support_gems (string[]), build the gems array here
-      const activeGemName = args.active_gem as string | undefined;
-      const supportGemNames = args.support_gems as string[] | undefined;
-      if (!activeGemName) throw new Error("active_gem is required");
-      const gemsArray: Array<{name: string}> = [
-        { name: activeGemName },
-        ...(supportGemNames || []).map((n: string) => ({ name: n })),
-      ];
-      return await handleSetupSkillWithGems(
-        itemSkillContext,
-        gemsArray,
-        args.label as string | undefined,
-        args.slot as string | undefined,
-        args.enabled as boolean | undefined,
-        args.include_in_full_dps as boolean | undefined
-      );
-    }
-
-    case "add_multiple_items":
-      if (!args) throw new Error("Missing arguments");
-      return await handleAddMultipleItems(
-        itemSkillContext,
-        args.items as Array<{item_text: string; slot_name?: string}>
-      );
-
-    // Phase 6: Build Optimization tools
-    case "analyze_defenses":
-      return await handleAnalyzeDefenses(optimizationContext, args?.build_name as string | undefined);
-
-    case "suggest_optimal_nodes":
-      if (!args) throw new Error("Missing arguments");
-      return await handleSuggestOptimalNodes(
-        optimizationContext,
-        args.build_name as string,
-        args.goal as string,
-        (args.points_available || args.max_points) as number | undefined
-      );
-
-    case "optimize_tree":
-      if (!args) throw new Error("Missing arguments");
-      return await handleOptimizeTree(
-        optimizationContext,
-        args.build_name as string,
-        args.goal as string,
-        args.max_points as number | undefined,
-        args.max_iterations as number | undefined,
-        args.constraints as OptimizationConstraints | undefined
-      );
-
-    case "analyze_items":
-      const advancedOptContext = deps.contextBuilder.buildAdvancedOptimizationContext();
-      return await handleAnalyzeItems(
-        advancedOptContext,
-        args?.build_name as string | undefined
-      );
-
-    case "optimize_skill_links":
-      const skillLinkContext = deps.contextBuilder.buildAdvancedOptimizationContext();
-      return await handleOptimizeSkillLinks(
-        skillLinkContext,
-        args?.build_name as string | undefined
-      );
-
-    case "create_budget_build":
-      if (!args) throw new Error("Missing arguments");
-      const budgetBuildContext = deps.contextBuilder.buildAdvancedOptimizationContext();
-      return await handleCreateBudgetBuild(
-        budgetBuildContext,
-        args.build_name as string,
-        (args.budget_tier || 'league-start') as string
-      );
-
-    // Phase 7: Build Validation
-    case "validate_build":
-      const validationContext = deps.contextBuilder.buildValidationContext();
-      return await handleValidateBuild(validationContext, {
-        build_name: args?.build_name as string | undefined,
-      });
-
-    // Phase 8: Export and Persistence Tools
-    case "export_build":
-      if (!args) throw new Error("Missing arguments");
-      return await handleExportBuild(exportContext, {
-        build_name: args.build_name as string,
-        output_name: args.output_name as string,
-        output_directory: args.output_directory as string | undefined,
-        overwrite: args.overwrite as boolean | undefined,
-        notes: args.notes as string | undefined,
-      });
-
-    case "save_tree":
-      if (!args) throw new Error("Missing arguments");
-      return await handleSaveTree(exportContext, {
-        build_name: args.build_name as string,
-        nodes: args.nodes as string[],
-        mastery_effects: args.mastery_effects as Record<string, number> | undefined,
-        backup: args.backup as boolean | undefined,
-      });
-
-    case "snapshot_build":
-      if (!args) throw new Error("Missing arguments");
-      return await handleSnapshotBuild(exportContext, {
-        build_name: args.build_name as string,
-        description: args.description as string | undefined,
-        tag: args.tag as string | undefined,
-      });
-
-    case "list_snapshots":
-      if (!args) throw new Error("Missing arguments");
-      return await handleListSnapshots(exportContext, {
-        build_name: args.build_name as string,
-        limit: args.limit as number | undefined,
-        tag_filter: args.tag_filter as string | undefined,
-      });
-
-    case "restore_snapshot":
-      if (!args) throw new Error("Missing arguments");
-      return await handleRestoreSnapshot(exportContext, {
-        build_name: args.build_name as string,
-        snapshot_id: args.snapshot_id as string,
-        backup_current: args.backup_current as boolean | undefined,
-      });
-
-    case "export_build_summary":
-      return await handleExportBuildSummary(deps.contextBuilder.buildExportContext());
-
-    // Skill Gem Analysis Tools (Phase 11)
-    case "analyze_skill_links":
-      return await handleAnalyzeSkillLinks(skillGemContext, args);
-
-    case "suggest_support_gems":
-      return await handleSuggestSupportGems(skillGemContext, args);
-
-    case "compare_gem_setups":
-      if (!args) throw new Error("Missing arguments");
-      return await handleCompareGemSetups(skillGemContext, {
-        build_name: args.build_name as string,
-        skill_index: args.skill_index as number | undefined,
-        setups: args.setups as Array<{ name: string; gems: string[] }>,
-      });
-
-    case "validate_gem_quality":
-      return await handleValidateGemQuality(skillGemContext, args);
-
-    case "find_optimal_links":
-      if (!args) throw new Error("Missing arguments");
-      return await handleFindOptimalLinks(skillGemContext, {
-        build_name: args.build_name as string,
-        skill_index: args.skill_index as number | undefined,
-        link_count: args.link_count as number,
-        budget: args.budget as "league_start" | "mid_league" | "endgame" | undefined,
-        optimize_for: args.optimize_for as "dps" | "clear_speed" | "bossing" | "defense" | undefined,
-      });
-
-    // ========================================
-    // Trade API Tools
-    // ========================================
-    case "search_trade_items": {
-      if (!deps.tradeClient) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      if (!args || !args.league) {
-        throw new Error("Missing required argument: league");
-      }
-      const tradeContext = {
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper || undefined,
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleSearchTradeItems(tradeContext, args as any);
-    }
-
-    case "get_item_price": {
-      if (!deps.tradeClient) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      const tradeContext = {
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper || undefined,
-        ninjaClient: deps.ninjaClient
-      };
-      if (!args) throw new Error("Missing arguments");
-      return await handleGetItemPrice(tradeContext, {
-        item_name: args.item_name as string,
-        league: args.league as string | undefined,
-        item_type: args.item_type as string | undefined,
-        rarity: args.rarity as "unique" | "rare" | "magic" | "normal" | undefined,
-      });
-    }
-
-    case "get_leagues": {
-      if (!deps.tradeClient) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      const tradeContext = {
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper || undefined,
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleGetLeagues(tradeContext);
-    }
-
-    case "search_stats": {
-      if (!deps.tradeClient || !deps.statMapper) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      if (!args) throw new Error("Missing arguments");
-      const tradeContext = {
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper,
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleSearchStats(tradeContext, {
-        query: args.query as string,
-        limit: args.limit as number | undefined,
-      });
-    }
-
-    case "find_item_upgrades": {
-      if (!deps.tradeClient || !deps.recommendationEngine) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      if (!args) throw new Error("Missing arguments");
-      const tradeContext = {
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper || undefined,
-        recommendationEngine: deps.recommendationEngine,
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleFindItemUpgrades(tradeContext, args as any);
-    }
-
-    case "find_resistance_gear": {
-      if (!deps.tradeClient || !deps.recommendationEngine) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      if (!args) throw new Error("Missing arguments");
-      const tradeContext = {
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper || undefined,
-        recommendationEngine: deps.recommendationEngine,
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleFindResistanceGear(tradeContext, args as any);
-    }
-
-    case "compare_trade_items": {
-      if (!deps.tradeClient) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      if (!args) throw new Error("Missing arguments");
-      const tradeContext = {
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper || undefined,
-        recommendationEngine: deps.recommendationEngine || undefined,
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleCompareTradeItems(tradeContext, args as any);
-    }
-
-    case "search_cluster_jewels": {
-      if (!deps.tradeClient) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      if (!args) throw new Error("Missing arguments");
-      const tradeContext = {
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper || undefined,
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleSearchClusterJewels(tradeContext, args as any);
-    }
-
-    case "analyze_cluster_jewels": {
-      if (!args) throw new Error("Missing arguments");
-      const buildContext = {
-        buildService: deps.contextBuilder.buildHandlerContext().buildService
-      };
-      return await handleAnalyzeClusterJewels(buildContext, {
-        build_name: args.build_name as string
-      });
-    }
-
-    case "generate_shopping_list": {
-      if (!deps.tradeClient) {
-        throw new Error("Trade API is not enabled. Set POE_TRADE_ENABLED=true to enable.");
-      }
-      if (!args) throw new Error("Missing arguments");
-      const shoppingContext = {
-        buildService: deps.contextBuilder.buildHandlerContext().buildService,
-        tradeClient: deps.tradeClient,
-        statMapper: deps.statMapper || undefined,
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleGenerateShoppingList(shoppingContext, {
-        build_name: args.build_name as string,
-        league: args.league as string,
-        budget: args.budget as 'budget' | 'medium' | 'endgame' | undefined
-      });
-    }
-
-    // ========================================
-    // poe.ninja API Tools
-    // ========================================
-    case "get_currency_rates": {
-      if (!args) throw new Error("Missing arguments");
-      const ninjaContext = {
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleGetCurrencyRates(ninjaContext, args as any);
-    }
-
-    case "find_arbitrage": {
-      if (!args) throw new Error("Missing arguments");
-      const ninjaContext = {
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleFindArbitrage(ninjaContext, args as any);
-    }
-
-    case "calculate_trading_profit": {
-      if (!args) throw new Error("Missing arguments");
-      const ninjaContext = {
-        ninjaClient: deps.ninjaClient
-      };
-      return await handleCalculateTradingProfit(ninjaContext, args as any);
-    }
-
-    // Build Goals Tools
-    case "get_build_issues": {
-      const goalsContext = {
-        getLuaClient: deps.getLuaClient,
-        ensureLuaClient: deps.ensureLuaClient,
-      };
-      const { issues, stats } = await handleGetBuildIssues(goalsContext);
-      return formatIssuesResponse(issues, stats);
-    }
-
-    case "get_passive_upgrades": {
-      const upgradesContext = {
-        getLuaClient: deps.getLuaClient,
-        ensureLuaClient: deps.ensureLuaClient,
-      };
-      const focus = (args?.focus as 'dps' | 'defence' | 'both') || 'both';
-      const maxResults = (args?.max_results as number) || 10;
-      return await handleGetPassiveUpgrades(upgradesContext, focus, maxResults);
-    }
-
-    case "analyze_build_cluster_jewels":
-      return await handleAnalyzeBuildClusterJewels({
-        getLuaClient: deps.getLuaClient,
-        ensureLuaClient: deps.ensureLuaClient,
-      });
-
-    case "suggest_watchers_eye":
-      return await handleSuggestWatchersEye({
-        getLuaClient: deps.getLuaClient,
-        ensureLuaClient: deps.ensureLuaClient,
-      });
-
-    case "check_boss_readiness":
-      if (!args?.boss) throw new Error("Missing boss name");
-      return await handleCheckBossReadiness(
-        { getLuaClient: deps.getLuaClient, ensureLuaClient: deps.ensureLuaClient },
-        args.boss as string
-      );
-
-    case "plan_leveling":
-      return await handlePlanLeveling(
-        { getLuaClient: deps.getLuaClient, ensureLuaClient: deps.ensureLuaClient },
-        args || {}
-      );
-
-    case "suggest_masteries":
-      return await handleSuggestMasteries({
-        getLuaClient: deps.getLuaClient,
-        ensureLuaClient: deps.ensureLuaClient,
-      });
-
-    case "get_build_notes":
-      if (!args?.build_name) throw new Error("Missing build_name");
-      return await handleGetBuildNotes(deps.contextBuilder.buildHandlerContext(), args.build_name as string);
-
-    case "set_build_notes":
-      if (!args?.build_name) throw new Error("Missing build_name");
-      if (args?.notes == null) throw new Error("Missing notes");
-      return await handleSetBuildNotes(deps.contextBuilder.buildHandlerContext(), args.build_name as string, args.notes as string);
-
-    case "gem_upgrade_path":
-      return await handleGemUpgradePath(
-        deps.contextBuilder.buildSkillGemContext(),
-        args || {}
-      );
-
-    default:
-      throw new Error(`Unknown tool: ${name}`);
+  const handler = toolRegistry.get(name);
+  if (!handler) {
+    throw new Error(`Unknown tool: ${name}`);
   }
+  return handler(args, deps);
 }

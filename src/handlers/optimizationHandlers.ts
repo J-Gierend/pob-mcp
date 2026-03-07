@@ -1,7 +1,7 @@
 import type { PoBLuaApiClient } from "../pobLuaBridge.js";
 import type { BuildService } from "../services/buildService.js";
 import type { TreeService } from "../services/treeService.js";
-import type { OptimizationConstraints } from "../treeOptimizer.js";
+import type { OptimizationConstraints } from "../types/optimization.js";
 import path from "path";
 import fs from "fs/promises";
 import { analyzeDefenses, formatDefensiveAnalysis } from "../defensiveAnalyzer.js";
