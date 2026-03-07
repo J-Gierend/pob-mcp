@@ -24,3 +24,7 @@
 {"ts":"2026-03-06T23:58:42Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
 {"ts":"2026-03-06T23:58:54Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
 {"ts":"2026-03-06T23:59:00Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
+{"ts":"2026-03-07T00:05:35Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/unit/docsCleanup.test.ts"}
+{"ts":"2026-03-07T00:05:44Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-07T00:05:51Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-07T00:06:15Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/unit/tddUnlock.test.ts"}
