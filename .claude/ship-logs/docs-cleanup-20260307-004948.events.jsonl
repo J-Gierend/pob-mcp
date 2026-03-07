@@ -44,3 +44,11 @@
 {"ts":"2026-03-07T00:17:18Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/skillLinkOptimizer.ts"}
 {"ts":"2026-03-07T00:17:19Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/skillLinkOptimizer.ts"}
 {"ts":"2026-03-07T00:19:06Z","event":"verify_invalidated","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/src/server/toolRouter.ts"}
+{"ts":"2026-03-07T00:19:31Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
+{"ts":"2026-03-07T00:19:35Z","phase":"build","event":"test_result","result":"pass"}
+{"ts":"2026-03-07T00:19:48Z","phase":"build","event":"test_result","result":"pass"}
+{"ts": "2026-03-07T00:20:14Z", "phase": "build", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-07T00:20:14Z", "phase": "build", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-07T00:20:20Z", "phase": "pipeline", "event": "independent_test_passed", "detail": ""}
+{"ts": "2026-03-07T00:20:20Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=build,result=GATE: ADVANCE to review"}
+{"ts": "2026-03-07T00:20:20Z", "phase": "review", "event": "phase_start", "detail": "attempt=1"}
