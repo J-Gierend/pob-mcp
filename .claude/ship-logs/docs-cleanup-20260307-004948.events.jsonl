@@ -30,3 +30,5 @@
 {"ts":"2026-03-07T00:06:15Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/unit/tddUnlock.test.ts"}
 {"ts":"2026-03-07T00:12:13Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_docs_cleanup.sh"}
 {"ts":"2026-03-07T00:12:18Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_tdd_gate.sh"}
+{"ts":"2026-03-07T00:13:17Z","event":"test_file_written","detail":"/home/jg/repos/pob-mcp-worktrees/docs-cleanup/tests/test_tdd_gate.sh"}
+{"ts":"2026-03-07T00:13:21Z","phase":"build","event":"test_result","result":"fail"}
