@@ -77,3 +77,17 @@
 {"ts": "2026-03-07T00:29:18Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=build,result=GATE: ADVANCE to review"}
 {"ts": "2026-03-07T00:29:18Z", "phase": "review", "event": "phase_start", "detail": "attempt=3"}
 {"ts":"2026-03-07T00:29:20Z","event":"failed","detail":"dead_agent_detected"}
+{"ts": "2026-03-07T00:31:31Z", "phase": "review", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-07T00:31:31Z", "phase": "review", "event": "phase_end", "detail": "attempt=3"}
+{"ts": "2026-03-07T00:31:31Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=review,result=GATE: ADVANCE to test"}
+{"ts": "2026-03-07T00:31:31Z", "phase": "test", "event": "phase_start", "detail": "attempt=1"}
+{"ts":"2026-03-07T00:32:01Z","phase":"test","event":"test_result","result":"pass"}
+{"ts":"2026-03-07T00:32:10Z","phase":"test","event":"test_result","result":"pass"}
+{"ts":"2026-03-07T00:32:18Z","phase":"test","event":"test_result","result":"pass"}
+{"ts": "2026-03-07T00:32:44Z", "phase": "test", "event": "harness_exit", "detail": "exit_code=0"}
+{"ts": "2026-03-07T00:32:44Z", "phase": "test", "event": "phase_end", "detail": "attempt=1"}
+{"ts": "2026-03-07T00:32:44Z", "phase": "test", "event": "integrity_warning", "detail": "unexpected_change=/home/jg/repos/pob-mcp-worktrees/docs-cleanup/.claude/workflow-state/verify/suite-passed.txt"}
+{"ts": "2026-03-07T00:32:49Z", "phase": "pipeline", "event": "independent_test_passed", "detail": ""}
+{"ts": "2026-03-07T00:32:49Z", "phase": "pipeline", "event": "gate_result", "detail": "phase=test,result=GATE: ADVANCE to srt"}
+{"ts": "2026-03-07T00:32:50Z", "phase": "srt", "event": "phase_start", "detail": "attempt=1"}
+{"ts":"2026-03-07T00:33:02Z","phase":"harness","event":"rate_limited","detail":"attempt=1,backoff=60s"}
