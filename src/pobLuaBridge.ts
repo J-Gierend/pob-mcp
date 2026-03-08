@@ -37,7 +37,7 @@ export class PoBLuaApiClient {
     this.options = {
       cwd: forkSrc,
       cmd: options.cmd || "luajit",
-      args: options.args || ["HeadlessWrapper.lua"],
+      args: options.args || ["HeadlessApi.lua"],
       env: options.env || {},
       timeoutMs: options.timeoutMs ?? 30000, // Increased from 10s to 30s
     };

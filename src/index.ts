@@ -37,7 +37,7 @@ import { ContextBuilder } from "./utils/contextBuilder.js";
 // Import server modules
 import { ToolGate } from "./server/toolGate.js";
 import { LuaClientManager } from "./server/luaClientManager.js";
-import { getToolSchemas, getLuaToolSchemas, getOptimizationToolSchemas, getConfigToolSchemas, getValidationToolSchemas, getExportToolSchemas, getSkillGemToolSchemas, getTradeToolSchemas, getPoeNinjaToolSchemas, getBuildGoalsToolSchemas } from "./server/toolSchemas.js";
+import { getToolSchemas, getLuaToolSchemas, getOptimizationToolSchemas, getConfigToolSchemas, getValidationToolSchemas, getExportToolSchemas, getSkillGemToolSchemas, getTradeToolSchemas, getPoeNinjaToolSchemas, getBuildGoalsToolSchemas, getLiveCharacterToolSchemas } from "./server/toolSchemas.js";
 import { routeToolCall, type ToolRouterDependencies } from "./server/toolRouter.js";
 import { wrapWithTruncation } from "./server/responseUtils.js";
 
@@ -296,6 +296,11 @@ class PoBMCPServer {
 
       // Add poe.ninja API tools (always available)
       tools.push(...getPoeNinjaToolSchemas());
+
+      // Add live character sync tools (Windows only)
+      if (process.platform === "win32") {
+        tools.push(...getLiveCharacterToolSchemas());
+      }
 
       return { tools };
     });

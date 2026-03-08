@@ -1722,3 +1722,11 @@ export function getPoeNinjaToolSchemas(): any[] {
     },
   ];
 }
+
+/**
+ * Get live character sync tool schemas
+ */
+export function getLiveCharacterToolSchemas(): any[] {
+  const { getLiveCharacterToolSchemas: getSchemas } = require("../handlers/liveCharacterHandlers.js");
+  return getSchemas();
+}

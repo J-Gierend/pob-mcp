@@ -36,6 +36,7 @@ import { handleSuggestWatchersEye } from "../handlers/jewelAdvisorHandlers.js";
 import { handleAnalyzeNextPoints } from "../handlers/analyzePointsHandler.js";
 import type { AnalyzePointsArgs } from "../handlers/analyzePointsHandler.js";
 import type { AnalysisMode } from "../services/passiveTreeAnalyzer.js";
+import { handleSyncLiveLogin, handleSyncLiveCharacter, handleCompareLiveWithPob } from "../handlers/liveCharacterHandlers.js";
 
 export interface ToolRouterDependencies {
   toolGate: ToolGate;
@@ -537,6 +538,28 @@ const toolRegistry = new Map<string, ToolHandler>([
       count: (a.count as number) || 10,
       main_socket_group: a.main_socket_group as number | undefined,
     });
+  }],
+
+  // Live character sync tools
+  ["sync_live_login", async (args) => {
+    const text = await handleSyncLiveLogin(args as any);
+    return { content: [{ type: "text", text }] };
+  }],
+  ["sync_live_character", async (args) => {
+    const a = requireArgs(args);
+    const text = await handleSyncLiveCharacter({
+      character_name: a.character_name as string,
+      force: a.force as boolean | undefined,
+    });
+    return { content: [{ type: "text", text }] };
+  }],
+  ["compare_live_with_pob", async (args) => {
+    const a = requireArgs(args);
+    const text = await handleCompareLiveWithPob({
+      character_name: a.character_name as string,
+      build_name: a.build_name as string,
+    });
+    return { content: [{ type: "text", text }] };
   }],
 ]);
 
