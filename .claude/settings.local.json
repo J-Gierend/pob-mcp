@@ -29,7 +29,8 @@
       "WebFetch(domain:poe.ninja)",
       "Bash(python3:*)",
       "mcp__pob__list_builds",
-      "mcp__pob__lua_start"
+      "mcp__pob__lua_start",
+      "mcp__pob__analyze_build"
     ],
     "deny": [],
     "ask": []
