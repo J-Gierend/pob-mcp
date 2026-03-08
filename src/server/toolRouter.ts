@@ -33,6 +33,9 @@ import { handleGenerateShoppingList } from "../handlers/shoppingListHandlers.js"
 import { handlePlanLeveling } from "../handlers/levelingHandlers.js";
 import { handleCheckBossReadiness } from "../handlers/bossReadinessHandlers.js";
 import { handleSuggestWatchersEye } from "../handlers/jewelAdvisorHandlers.js";
+import { handleAnalyzeNextPoints } from "../handlers/analyzePointsHandler.js";
+import type { AnalyzePointsArgs } from "../handlers/analyzePointsHandler.js";
+import type { AnalysisMode } from "../services/passiveTreeAnalyzer.js";
 
 export interface ToolRouterDependencies {
   toolGate: ToolGate;
@@ -522,6 +525,19 @@ const toolRegistry = new Map<string, ToolHandler>([
     handlePlanLeveling(luaBridgeContext(deps), args || {})],
   ["suggest_masteries", (args, deps) =>
     handleSuggestMasteries(luaBridgeContext(deps))],
+  ["analyze_next_points", (args, deps) => {
+    const a = requireArgs(args);
+    if (!a.build_path) throw new Error("Missing required argument: build_path");
+    if (!a.live_nodes || !Array.isArray(a.live_nodes)) throw new Error("Missing required argument: live_nodes (array of node IDs)");
+    return handleAnalyzeNextPoints(luaBridgeContext(deps), {
+      build_path: a.build_path as string,
+      spec_index: a.spec_index as number | undefined,
+      live_nodes: a.live_nodes as number[],
+      mode: (a.mode as AnalysisMode) || 'auto',
+      count: (a.count as number) || 10,
+      main_socket_group: a.main_socket_group as number | undefined,
+    });
+  }],
 ]);
 
 /**

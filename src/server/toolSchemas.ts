@@ -1619,6 +1619,42 @@ export function getBuildGoalsToolSchemas(): any[] {
         required: ["boss"],
       },
     },
+    {
+      name: "analyze_next_points",
+      description: "Analyze the best next passive skill points to allocate by comparing your current live tree against a goal PoB build. Simulates each candidate notable/keystone path through the Lua bridge, scoring on offense (DPS), defense (EHP/resists), and recovery (leech/regen). Returns ranked recommendations with path costs and stat deltas. Requires a loaded build and live character node IDs.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          build_path: {
+            type: "string",
+            description: "Absolute path to the PoB XML build file containing the goal build",
+          },
+          spec_index: {
+            type: "number",
+            description: "Which passive tree spec to analyze (0-based index). Omit for active spec.",
+          },
+          live_nodes: {
+            type: "array",
+            items: { type: "number" },
+            description: "Array of currently allocated passive node IDs from the live character (GGG API)",
+          },
+          mode: {
+            type: "string",
+            description: "Scoring mode: offense (DPS-focused), defense (EHP-focused), balanced, or auto (detects weaknesses). Default: auto",
+            enum: ["offense", "defense", "balanced", "auto"],
+          },
+          count: {
+            type: "number",
+            description: "Number of top results to return (default: 10)",
+          },
+          main_socket_group: {
+            type: "number",
+            description: "Which skill group to use for DPS calculation (1-based, default: 1)",
+          },
+        },
+        required: ["build_path", "live_nodes"],
+      },
+    },
   ];
 }
 
