@@ -425,10 +425,9 @@ Use these when asking for build planning help:
 
 ## Support and Resources
 
-- **GitHub**: https://github.com/yourusername/pob-mcp-server
+- **GitHub**: https://github.com/J-Gierend/pob-mcp
 - **Testing Guide**: See TESTING_GUIDE.md
 - **Full Documentation**: See README.md
-- **PoB API Fork**: https://github.com/Dulluhan/pob-api
 - **MCP Protocol**: https://modelcontextprotocol.io
 
 ## Version Information

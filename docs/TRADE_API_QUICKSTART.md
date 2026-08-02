@@ -275,4 +275,4 @@ If you encounter issues:
 
 - [Path of Exile Trade API Documentation](https://www.pathofexile.com/developer/docs)
 - [pob-mcp-server README](../README.md)
-- [Trade API Implementation Plan](../TRADE_API_IMPLEMENTATION_PLAN.md)
+- [Trade API Implementation Plan](archive/TRADE_API_IMPLEMENTATION_PLAN.md)

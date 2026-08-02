@@ -229,4 +229,4 @@ See [ROADMAP.md](ROADMAP.md) for Phase 2: Enhanced Parsing (passive trees, jewel
 
 **Questions or Issues?**
 
-Check the troubleshooting section in the main [README.md](README.md) or open an issue.
+Check the troubleshooting section in the main [README.md](../README.md) or open an issue.
