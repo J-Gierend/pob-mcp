@@ -22,3 +22,7 @@ plans/**/*.html
 .worktree-done
 .morning-update.last.md
 # --- end agent artifacts ---
+
+# agent coordination state (only README tracked)
+.state/*
+!.state/README.md
