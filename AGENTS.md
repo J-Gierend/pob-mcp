@@ -1,15 +1,27 @@
-*Standard: jg-v1 | type: mcp-server*
+*Standard: jg-v1 | type: service*
+*Inherits global rules from ~/.claude/CLAUDE.md. Project knowledge: brain_query("pob-mcp ...")*
 
-# pob-mcp — router
+# pob-mcp
 
-*Inherits global rules from ~/.claude/CLAUDE.md.*
+MCP server (stdio) that lets Claude analyze, modify, and optimize Path of Building builds using PoB's own Lua calculation engine. Fork of `ianderse/pob-mcp` (kept as `upstream` remote).
 
-MCP server that lets an agent analyze, modify and optimize Path of Building
-builds through PoB's own calculation engine (Lua bridge). TypeScript, jest.
+## Commands
+- Build: `npm run build` (tsc → `build/`)
+- Test: `npm test` (`test:unit`, `test:integration`, `test:coverage` variants)
+- Run: `npm start` — stdio MCP server, registered in a client config (see `claude_desktop_config.example.json`)
+- Dev watch: `npm run dev`
 
-## What / where
-- **Human intro + feature list:** `README.md`
-- **Durable knowledge:** `docs/` — start at `docs/POB_BRIDGE.md` and `docs/DOCUMENTATION_SUMMARY.md`
-- **Sources:** `src/` (handlers, services, `pobLuaBridge`)
-- **Tests:** `npm test` (jest)
-- **Open work:** `todo.md`
+## Map
+- `src/` — TypeScript server: `index.ts` entry, `handlers/`, `services/`, `server/` (tool schemas), `pobLuaBridge.ts`
+- `tests/` + `tests/unit/` — Jest suites and repro scripts
+- `docs/operations.md` — how to run, env vars, debugging
+- `docs/` — guides, phase docs, `archive/` for superseded docs
+- `plans/` — active plans (`archived/` when done)
+- `agent-os/` — Agent OS product/spec docs (legacy planning tooling, driven by `.claude/commands/agent-os/`)
+- `external/PathOfBuilding` — PoB checkout as git submodule (Lua engine for the bridge)
+- `README.md` — full user-facing setup + tool reference (upstream-style)
+
+## Rules
+- Upstream fork: keep `src/` changes mergeable with `ianderse/pob-mcp` where practical.
+- All runtime config via env vars (`POB_*`) — never hardcode paths or credentials in tracked files.
+- Lua-bridge features require a local PathOfBuilding checkout (`POB_FORK_PATH`); plain XML analysis works without it.
