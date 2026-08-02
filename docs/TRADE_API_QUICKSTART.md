@@ -269,7 +269,7 @@ If you encounter issues:
 2. Verify Claude Desktop was restarted after config changes
 3. Check console logs for error details
 4. Ensure network connectivity to pathofexile.com
-5. Report issues at https://github.com/ianderse/pob-mcp-server/issues
+5. Report issues at https://github.com/ianderse/pob-mcp/issues
 
 ## References
 
