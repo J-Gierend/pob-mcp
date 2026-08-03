@@ -18,7 +18,7 @@ MCP server (stdio) that lets Claude analyze, modify, and optimize Path of Buildi
 - `docs/` — guides, phase docs, `archive/` for superseded docs
 - `plans/` — active plans (`archived/` when done)
 - `agent-os/` — Agent OS product/spec docs (legacy planning tooling, driven by `.claude/commands/agent-os/`)
-- `external/PathOfBuilding` — PoB checkout as git submodule (Lua engine for the bridge)
+- PathOfBuilding checkout lives outside the repo, located via `POB_FORK_PATH` (Lua engine for the bridge)
 - `README.md` — full user-facing setup + tool reference (upstream-style)
 
 ## Rules
