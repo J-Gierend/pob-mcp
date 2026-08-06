@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `optimize_tree` tool is a powerful passive tree optimizer that can both **add** and **remove** nodes to find the best overall allocation for your build goal.
+`optimize_tree`: **add**+**remove** nodes, finds best overall allocation for your goal.
 
 ## Basic Usage
 
@@ -16,28 +16,20 @@ optimize_tree(
 ## Optimization Goals
 
 ### Offense
-- **`maximize_dps`**: Maximum total damage per second
-- Prioritizes: Damage, crit, attack/cast speed nodes
+- **`maximize_dps`**: max DPS — prioritizes damage, crit, attack/cast speed nodes
 
 ### Defense
-- **`maximize_life`**: Maximum life pool
-- **`maximize_es`**: Maximum energy shield
-- **`maximize_ehp`**: Maximum effective HP (Life + ES combined)
-- Prioritizes: Life%, ES%, hybrid life/ES nodes
+- **`maximize_life`**: max life · **`maximize_es`**: max ES · **`maximize_ehp`**: max Life+ES — prioritizes Life%/ES%/hybrid nodes
 
 ### Balanced
-- **`balanced`**: Balance offense and defense
-- Uses geometric mean (punishes extremes)
-- Good for all-around builds
-
-- **`league_start`**: Prioritize survivability (60/40 split)
-- Emphasizes defense over offense early game
+- **`balanced`**: offense/defense balance via geometric mean (punishes extremes), good all-around
+- **`league_start`**: survivability (60/40 split), defense-weighted early game
 
 ## Constraints
 
 ### Defensive Minimums
 
-Specify minimum thresholds to maintain:
+Minimum thresholds:
 
 ```typescript
 constraints: {
@@ -53,7 +45,7 @@ constraints: {
 
 ### Protected Nodes
 
-Prevent specific nodes from being removed:
+Prevent nodes from being removed:
 
 ```typescript
 constraints: {
@@ -61,17 +53,13 @@ constraints: {
 }
 ```
 
-Use this to protect:
-- Critical keystones (Point Blank, Avatar of Fire, etc.)
-- Ascendancy nodes
-- Jewel sockets with valuable jewels
-- Travel nodes you need for pathing
+Protect: critical keystones (Point Blank, Avatar of Fire), ascendancy nodes, valuable jewel sockets, needed travel nodes.
 
 ## Build Type Considerations
 
 ### Life-Based Builds
 
-Use `minLife` to ensure adequate life pool:
+Use `minLife`:
 
 ```typescript
 optimize_tree(
@@ -105,9 +93,7 @@ optimize_tree(
 
 ### Low-Life Builds ⚠️
 
-**IMPORTANT**: Low-life builds (Pain Attunement, Prism Guardian, etc.) run at ~35% life by design.
-
-**Use `minEHP` instead of `minLife`**:
+**IMPORTANT**: low-life (Pain Attunement, Prism Guardian) runs ~35% life by design — **use `minEHP` not `minLife`**:
 
 ```typescript
 // ❌ Wrong for low-life:
@@ -122,10 +108,7 @@ constraints: {
 }
 ```
 
-The optimizer will **auto-detect low-life builds** and:
-- Skip `minLife` constraints automatically
-- Log a warning: `"⚠️ Low-life build detected! minLife constraint will be ignored"`
-- Add result warning: `"Low-life build detected: minLife constraint was ignored. Use minEHP for low-life builds."`
+Auto-detects low-life: skips `minLife`, logs `"⚠️ Low-life build detected! minLife constraint will be ignored"`, warns `"Low-life build detected: minLife constraint was ignored. Use minEHP for low-life builds."`
 
 ### Hybrid Life/ES Builds
 
@@ -147,7 +130,7 @@ optimize_tree(
 
 ### Point Budget
 
-Control maximum passive points to use:
+Max passive points:
 
 ```typescript
 optimize_tree(
@@ -157,16 +140,13 @@ optimize_tree(
 )
 ```
 
-**Default**: Current allocation + 5 points
+**Default**: current allocation + 5 points
 
-**Use when**:
-- Planning for a specific level
-- Respeccing to a different point budget
-- Comparing efficiency at different levels
+**Use when**: planning a level, respeccing budget, comparing level efficiency
 
 ### Max Iterations
 
-Control how long optimization runs:
+How long optimization runs:
 
 ```typescript
 optimize_tree(
@@ -178,12 +158,9 @@ optimize_tree(
 
 **Default**: 20 iterations
 
-**Guidelines**:
-- 10-15: Quick optimization (~30-60 seconds)
-- 20-25: Standard (default, ~60-90 seconds)
-- 30+: Thorough (~90-150 seconds)
+**Guidelines**: 10-15 quick (~30-60 s), 20-25 standard (~60-90 s), 30+ thorough (~90-150 s)
 
-**Note**: Optimization stops early if no improvements found.
+**Note**: optimization stops early if no improvements found.
 
 ## Example Workflows
 
@@ -307,7 +284,7 @@ Added 5 nodes: 78901, 34567, 89012, 45678, 90123
 
 ### Applying Results
 
-Use `lua_set_tree` to apply the optimized tree:
+Apply via `lua_set_tree`:
 
 ```typescript
 lua_set_tree(
@@ -317,40 +294,23 @@ lua_set_tree(
 )
 ```
 
-**IMPORTANT**: Save your build before applying! You can't easily undo.
+**IMPORTANT**: save your build first — hard to undo.
 
 ## Algorithm Details
 
 ### How It Works
 
-Each iteration has two phases:
-
-**Phase A: Add beneficial nodes**
-1. Find nearby unallocated nodes (distance: 3)
-2. Test top 30 candidates
-3. Apply best addition if found
-
-**Phase B: Remove inefficient nodes**
-1. Find removable nodes (not required for pathing)
-2. Test top 20 candidates
-3. Accept removal if score stays within 1% (saves points!)
-
-Stops when no improvements found or max iterations reached.
+Two phases/iteration: **A Add** — nearby unallocated nodes (dist 3), test top 30, apply best. **B Remove** — removable nodes (not needed for pathing), test top 20, accept if score within 1%. Stops when no improvement or max iterations hit.
 
 ### Performance
 
-- **Per iteration**: 2-5 seconds
-- **Full optimization**: 30-120 seconds
-- **Candidates tested**: Up to 50 per iteration (30 adds + 20 removes)
+**Per iteration**: 2-5 s · **Full run**: 30-120 s · **Candidates**: ≤50/iteration (30 add+20 remove).
 
 ### Search Distance
 
-Fixed at 3 nodes for performance. This means:
-- ✅ Finds nearby optimizations efficiently
-- ✅ Good for local improvements
-- ❌ Won't find distant optimal branches
+Fixed at 3 nodes for performance: efficient local improvements, won't find distant optimal branches.
 
-For long-range planning, use `suggest_optimal_nodes` with higher `max_distance`.
+Long-range planning: use `suggest_optimal_nodes` with higher `max_distance`.
 
 ## Tips & Best Practices
 
@@ -373,70 +333,36 @@ optimize_tree(
 
 ### 2. Protect Critical Nodes
 
-Always protect:
-- Build-defining keystones
-- Ascendancy nodes (automatic)
-- Jewel sockets with expensive jewels
-- Unique pathing nodes
+Always protect: build-defining keystones, ascendancy nodes (auto), expensive jewel sockets, unique pathing nodes
 
 ### 3. Multiple Runs
 
-Run optimizer multiple times:
-1. First run with one goal (e.g., DPS)
-2. Apply results
-3. Second run with different goal (e.g., EHP)
-4. Compare and choose
+Run multiple times: goal A (e.g. DPS)→apply→goal B (e.g. EHP)→compare→choose
 
 ### 4. Verify Before Applying
 
-- Check removed nodes aren't critical
-- Verify added nodes make sense
-- Review stat changes carefully
-- Save build before applying
+Check removed nodes aren't critical, added nodes make sense, review stat changes, save before applying
 
 ### 5. Iteration Count
 
-- Quick check: 10 iterations
-- Normal use: 20 iterations (default)
-- Thorough: 30+ iterations
-- More isn't always better (diminishing returns)
+Quick: 10. Normal: 20(default). Thorough: 30+. Diminishing returns beyond that.
 
 ## Troubleshooting
 
 ### "Tree is already optimal"
-
-**Cause**: No improvements found within search distance.
-
-**Solutions**:
-- Increase `max_iterations`
-- Relax constraints
-- Use different goal
-- Try `suggest_optimal_nodes` for longer-range planning
+**Cause**: no improvement within search distance. **Fix**: raise `max_iterations`, relax constraints, different goal, or `suggest_optimal_nodes` for longer range.
 
 ### "Reached maximum iterations"
-
-**Cause**: Hit iteration limit before converging.
-
-**Solutions**:
-- Increase `max_iterations` (try 30-40)
-- Current result is still valid (just not fully optimized)
+**Cause**: hit iteration limit before converging. **Fix**: raise `max_iterations` (30-40); current result still valid, just not fully optimized.
 
 ### "Final tree does not meet all constraints"
-
-**Cause**: Bug or impossible constraint combination.
-
-**Solutions**:
-- Review constraints (are they achievable?)
-- Check for conflicts (minLife + minES + minDPS may be impossible)
-- Report as bug if constraints seem reasonable
+**Cause**: bug or impossible constraints. **Fix**: check achievability, check conflicts (minLife+minES+minDPS), report bug if constraints seem reasonable.
 
 ### Low-Life Warning
 
 **Message**: `"Low-life build detected: minLife constraint was ignored"`
 
-**Cause**: Build detected as low-life (life < 50% of max).
-
-**Solution**: Use `minEHP` instead of `minLife`:
+**Cause**: low-life detected (life <50% max). **Fix**: use `minEHP` not `minLife`:
 ```typescript
 constraints: {
   minEHP: 7000,  // Instead of minLife
@@ -446,49 +372,20 @@ constraints: {
 
 ## Limitations
 
-1. **Local Optimum**: May not find global best
-   - Greedy algorithm finds local improvements
-   - Multiple runs may find different results
-
-2. **Search Distance**: Fixed at 3 nodes
-   - Won't find distant branches
-   - Use `suggest_optimal_nodes` for long-range
-
-3. **Sequential Testing**: One change at a time
-   - Takes 30-120 seconds
-   - Necessary for accurate stats
-
-4. **Pathing Analysis**: Simplified
-   - May be overly conservative
-   - Prevents tree breakage
+1. **Local Optimum**: greedy, may miss global best; multiple runs vary
+2. **Search Distance**: fixed at 3, won't find distant branches — use `suggest_optimal_nodes`
+3. **Sequential Testing**: one change/time, 30-120s, needed for accurate stats
+4. **Pathing**: simplified, may be overly conservative
 
 ## Comparison with suggest_optimal_nodes
 
-| Feature | optimize_tree | suggest_optimal_nodes |
-|---------|--------------|----------------------|
-| Add nodes | ✅ | ✅ |
-| Remove nodes | ✅ | ❌ |
-| Reallocate points | ✅ | ❌ |
-| Full tree optimization | ✅ | ❌ |
-| Search distance | Fixed (3) | Configurable |
-| Constraints | Full system | Limited |
-| Protected nodes | ✅ | ❌ |
-| Runtime | 30-120s | 10-30s |
-| Best for | Complete optimization | Quick suggestions |
+optimize_tree: add✅ remove✅ reallocate✅ full-optimization✅ search-distance fixed(3) constraints full-system protected-nodes✅ runtime 30-120s, best for complete optimization.
+suggest_optimal_nodes: add✅ remove❌ reallocate❌ full-optimization❌ search-distance configurable constraints limited protected-nodes❌ runtime 10-30s, best for quick suggestions.
 
 ## Future Enhancements
 
-- [ ] Configurable search distance
-- [ ] Multi-start optimization (escape local optima)
-- [ ] Branch swapping (replace entire paths)
-- [ ] Cluster jewel optimization
-- [ ] Parallel candidate testing
-- [ ] Better path analysis (full graph traversal)
+[ ] Configurable search distance · [ ] Multi-start (escape local optima) · [ ] Branch swapping · [ ] Cluster jewel optimization · [ ] Parallel candidate testing · [ ] Better path analysis (full graph traversal)
 
 ## See Also
 
-- `suggest_optimal_nodes` - Quick node recommendations
-- `get_nearby_nodes` - Discover reachable nodes
-- `allocate_nodes` - Test specific allocations
-- `test_allocation` - What-if analysis
-- `analyze_defenses` - Identify defensive weaknesses
+`suggest_optimal_nodes`(quick recs), `get_nearby_nodes`(reachable nodes), `allocate_nodes`(test allocations), `test_allocation`(what-if), `analyze_defenses`(weaknesses)

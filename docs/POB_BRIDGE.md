@@ -1,30 +1,26 @@
 # PoB Headless Bridge Plan
 
-This document outlines how we will integrate the forked Path of Building (PoB) headless API into this MCP server to power high‑fidelity calculations and live tree edits.
+Forked PoB headless API: high‑fidelity calc + live tree edits.
 
 ## Overview
-- Goal: Use the forked PoB headless API to load builds, compute stats, and edit passive trees from MCP tools.
-- Fork location: `~/Projects/PathOfBuilding` (API server runs from `~/Projects/PathOfBuilding/src`).
-- Transport: stdio JSON lines (one line per request/response), long‑lived process. Optional TCP (embedded in GUI) on 127.0.0.1:POB_API_TCP_PORT.
-- Bridge: `src/pobLuaBridge.ts` spawns and talks to the PoB API.
-- Rollout: Feature‑flagged; graceful fallback to current XML‑only analysis if headless is unavailable.
+- Loads builds/computes stats/edits trees from MCP tools.
+- Fork `~/Projects/PathOfBuilding` (server `~/Projects/PathOfBuilding/src`).
+- stdio JSON lines (1 per request/response), long‑lived. Optional TCP on 127.0.0.1:POB_API_TCP_PORT.
+- `src/pobLuaBridge.ts` spawns/talks to PoB API.
+- Feature‑flagged, falls back to XML‑only.
 
 ## Architecture
-- Process model: One long‑lived PoB Lua process per MCP server instance (stdio), or embedded in the GUI (TCP).
-  - Start: On first “lua_*” tool call (or explicit `lua_start`).
-  - Stop: On MCP shutdown (or explicit `lua_stop`).
-- Node bridge (already added): `src/pobLuaBridge.ts`
-  - Spawns `luajit HeadlessWrapper.lua` in `~/Projects/PathOfBuilding/src` with `POB_API_STDIO=1`.
-  - Methods: `start()`, `stop()`, `ping()`, `loadBuildXml()`, `getStats()`, `getTree()`, `setTree()`.
-- Fork API (implemented): `load_build_xml`, `get_stats`, `get_tree`, `set_tree`, `quit`.
+- One PoB Lua process/instance (stdio) or in GUI (TCP); starts on "lua_*"/`lua_start`, stops on shutdown/`lua_stop`.
+- `src/pobLuaBridge.ts` spawns `luajit HeadlessWrapper.lua` in `~/Projects/PathOfBuilding/src` w/`POB_API_STDIO=1`; methods `start()`,`stop()`,`ping()`,`loadBuildXml()`,`getStats()`,`getTree()`,`setTree()`.
+- Fork API `load_build_xml`,`get_stats`,`get_tree`,`set_tree`,`quit`.
 
 TCP (GUI) mode
-- Enable with `POB_API_TCP=1` (and optional `POB_API_TCP_PORT`, default 31337) when launching PoB GUI.
-- Server is embedded via `src/API/TcpServer.lua` and pumped from `Modules/Main.lua` each frame.
-- Same JSON actions as stdio server (ping, load_build_xml, get_stats, get_tree, set_tree, update_tree_delta, calc_with, export_build_xml, get_build_info, set_level, get_config, set_config).
+- `POB_API_TCP=1` (+`POB_API_TCP_PORT`, default 31337) at PoB GUI launch.
+- `src/API/TcpServer.lua`, pumped from `Modules/Main.lua` per frame.
+- Same actions as stdio: ping,load_build_xml,get_stats,get_tree,set_tree,update_tree_delta,calc_with,export_build_xml,get_build_info,set_level,get_config,set_config.
 
 ### Enabling TCP mode (Windows GUI)
-- Start PoB from a PowerShell where the env var is set:
+- Start PoB w/env set:
   ```powershell
   # Optional: pick a custom port
   $env:POB_API_TCP_PORT = 31337
@@ -32,15 +28,15 @@ TCP (GUI) mode
   $env:POB_API_TCP = 1
   & "C:\\Path\\To\\Path of Building\\Path of Building.exe"
   ```
-- Binding: the server binds to `127.0.0.1` only (loopback). It is not reachable over LAN by design.
-- Default port: `31337` unless overridden by `POB_API_TCP_PORT`.
-- Ready banner: on connect, the first line is JSON like:
+- Binds `127.0.0.1` only (loopback), no LAN.
+- Default `31337`, override w/`POB_API_TCP_PORT`.
+- First line on connect = banner JSON:
   ```json
   { "ok": true, "ready": true, "version": { "number": "x.y.z", "branch": "...", "platform": "..." } }
   ```
 
 ### Functional smoke tests (same Windows PC)
-Run these while the PoB GUI is open (with a build loaded) and TCP mode enabled.
+PoB GUI open (build loaded), TCP mode on.
 
 1) PowerShell using TcpClient
 ```powershell
@@ -99,28 +95,28 @@ const send = obj => sock.write(JSON.stringify(obj) + '\n');
 ```
 
 3) Optional mutation tests
-- Change level (safe): `{"action":"set_level","params":{"level":90}}`
-- Export XML: `{"action":"export_build_xml"}`
-- Tree diff (changes current build): `{"action":"update_tree_delta","params":{"addNodes":[12345]}}` then `get_tree` to verify.
+- Level: `{"action":"set_level","params":{"level":90}}`
+- Export: `{"action":"export_build_xml"}`
+- Tree diff: `{"action":"update_tree_delta","params":{"addNodes":[12345]}}` then `get_tree` to verify.
 
 Notes
-- `load_build_xml` may not be available in GUI TCP context; prefer interacting with the build currently open in the GUI.
-- Actions supported in TCP mode include: `ping`, `version`, `get_build_info`, `get_stats`, `get_tree`, `update_tree_delta`, `calc_with`, `export_build_xml`, `set_level`, `get_config`, `set_config`.
+- `load_build_xml` may be unavailable in GUI TCP.
+- TCP actions: `ping`,`version`,`get_build_info`,`get_stats`,`get_tree`,`update_tree_delta`,`calc_with`,`export_build_xml`,`set_level`,`get_config`,`set_config`.
 
 ### Diagnostics
-- Port check (Windows): `Test-NetConnection localhost -Port 31337`
-- Listener check (Windows): `netstat -ano | findstr :31337` then `Get-Process -Id <PID>`
-- If the TCP test fails but PoB is running, verify the env vars were set in the same shell that launched PoB.
+- Port: `Test-NetConnection localhost -Port 31337`
+- Listener: `netstat -ano | findstr :31337` → `Get-Process -Id <PID>`
+- Test fails but PoB runs → check env vars in launching shell.
 
 ### Remote testing from macOS (SSH tunnel)
-Because the server binds to `127.0.0.1` on the Windows PC, it is not reachable across the network. Use SSH port forwarding:
-1) From macOS, create a tunnel to Windows (replace IP and user):
+Binds `127.0.0.1` on Windows PC, unreachable across network — use SSH port forwarding:
+1) Tunnel macOS→Windows (replace IP/user):
 ```bash
 ssh -L 31337:127.0.0.1:31337 iande@192.168.x.x
 ```
-2) On macOS, point your client to `127.0.0.1:31337` (traffic tunnels to Windows PoB).
+2) Point client to `127.0.0.1:31337`.
 
-Tip: You can also use the bundled Node client in this repo (`PoBLuaTcpClient` in `build/pobLuaBridge.js`):
+Tip: bundled Node client (`PoBLuaTcpClient` in `build/pobLuaBridge.js`):
 ```js
 import { PoBLuaTcpClient } from './build/pobLuaBridge.js';
 const api = new PoBLuaTcpClient({ host: '127.0.0.1', port: 31337 });
@@ -132,126 +128,61 @@ await api.stop();
 ```
 
 ### Common issues
-- Hostname resolution (SSH): On macOS, `ssh iande@IanPC` may fail if `IanPC` isn’t in DNS. Use the Windows IP or add an `/etc/hosts` entry.
-- `TcpTestSucceeded: false`: Indicates nothing is listening on the tested port. Ensure PoB GUI was launched with `POB_API_TCP=1` and that you’re testing `localhost:31337` on the Windows machine (or via an SSH tunnel).
-- Remote access: Changing `TcpServer.lua` to bind `0.0.0.0` would expose the port, but is not recommended. Prefer tunneling for safety.
+- `ssh iande@IanPC` may fail if `IanPC` isn’t in DNS — use Windows IP or `/etc/hosts` entry.
+- `TcpTestSucceeded: false`: nothing listening. Ensure `POB_API_TCP=1` set, test `localhost:31337` on Windows (or SSH tunnel).
+- Remote access: binding `TcpServer.lua` to `0.0.0.0` exposes the port — not recommended; prefer tunneling.
 
 ## MCP Tools (to add)
-Expose atomic tools that map to the PoB API. Names prefixed `lua_` to avoid confusion with XML‑only tools.
+Atomic tools mapping to PoB API, prefixed `lua_`.
 
-- `lua_start`
-  - Description: Start the PoB headless API process (no‑op if already running).
-  - Input: `{}`
-  - Output: status text.
-
-- `lua_load_build`
-  - Description: Load a PoB build from raw XML into the headless PoB session.
-  - Input: `{ build_xml: string, name?: string }`
-  - Output: status text.
-
-- `lua_get_stats`
-  - Description: Return computed stats from PoB calc engine.
-  - Input: `{ fields?: string[] } // optional field whitelist`
-  - Output: `{ stats: Record<string, number|string> }`
-
-- `lua_get_tree`
-  - Description: Return current passive tree data.
-  - Input: `{}`
-  - Output: `{ treeVersion, classId, ascendClassId, secondaryAscendClassId, nodes: number[], masteryEffects: Record<number,number> }`
-
-- `lua_set_tree`
-  - Description: Set class/ascendancy and allocated nodes (and mastery selections), then recalc.
-  - Input: `{ classId: number, ascendClassId: number, secondaryAscendClassId?: number, nodes: number[], masteryEffects?: Record<number,number>, treeVersion?: string }`
-  - Output: `{ tree: ... } // same shape as get_tree`
-
-- `lua_stop`
-  - Description: Stop the PoB headless API process.
-  - Input: `{}`
-  - Output: status text.
+- `lua_start` — start (no‑op if running); `{}`→status text.
+- `lua_load_build` — load from raw XML; `{ build_xml: string, name?: string }`→status text.
+- `lua_get_stats` — stats; `{ fields?: string[] } // optional field whitelist`→`{ stats: Record<string, number|string> }`
+- `lua_get_tree` — `{}`→`{ treeVersion, classId, ascendClassId, secondaryAscendClassId, nodes: number[], masteryEffects: Record<number,number> }`
+- `lua_set_tree` — sets class/ascendancy+nodes/masteries, recalcs; `{ classId: number, ascendClassId: number, secondaryAscendClassId?: number, nodes: number[], masteryEffects?: Record<number,number>, treeVersion?: string }`→`{ tree: ... } // same shape as get_tree`
+- `lua_stop` — `{}`→status text.
 
 Notes
-- We can later add `lua_calc_with` for what‑if diffs without persisting tree changes using PoB’s `GetMiscCalculator()`.
+- Later: `lua_calc_with` via `GetMiscCalculator()`.
 
 ## Integration Steps
-1. Add feature flag
-   - Env `POB_LUA_ENABLED=true` gates registration of `lua_*` tools.
-   - Default: disabled; XML‑only tools remain unaffected.
-
-2. Wire lifecycle
-   - Add a singleton `PoBLuaApiClient` in MCP server scope.
-   - `lua_start`: calls `client.start()`.
-   - `lua_stop`: calls `client.stop()`.
-   - All other `lua_*` tools: auto‑start if not started.
-
-3. Implement tools (src/index.ts)
-   - Register new tools in `ListToolsRequestSchema` handler when `POB_LUA_ENABLED`.
-   - Add a `CallToolRequestSchema` handler branch that:
-     - Validates input
-     - Calls bridge methods
-     - Formats text responses consistently with existing tools
-     - Wraps errors with actionable messages, not stack traces
-
-4. Add configuration
-   - Env vars (with defaults):
-     - `POB_LUA_ENABLED` (default: false)
-     - `POB_FORK_PATH` (default: `~/Projects/PathOfBuilding/src`)
-     - `POB_CMD` (default: `luajit`)
-     - `POB_ARGS` (default: `HeadlessWrapper.lua`)
-     - `POB_TIMEOUT_MS` (default: `10000`)
-
-5. Update docs
-   - README: add “Headless PoB Integration” section with prerequisites and usage.
-   - API_README link: refer to `~/Projects/PathOfBuilding/src/API/` for API usage.
+1. **Flag** — `POB_LUA_ENABLED=true` gates `lua_*` tools, default off.
+2. **Lifecycle** — singleton `PoBLuaApiClient`. `lua_start`→`client.start()`, `lua_stop`→`client.stop()`, others auto‑start.
+3. **`src/index.ts`** — register in `ListToolsRequestSchema`(`POB_LUA_ENABLED`); `CallToolRequestSchema` validates/calls bridge/wraps errors.
+4. **Config**: `POB_LUA_ENABLED`(false),`POB_FORK_PATH`(`~/Projects/PathOfBuilding/src`),`POB_CMD`(`luajit`),`POB_ARGS`(`HeadlessWrapper.lua`),`POB_TIMEOUT_MS`(`10000`)
+5. **Docs** — README "Headless PoB Integration" + link `~/Projects/PathOfBuilding/src/API/`.
 
 ## Error Handling & Fallbacks
-- Startup failure (binary missing, bad path):
-  - Return clear error and suggest `brew install luajit` or verify `POB_FORK_PATH`.
-  - Keep XML‑only tools available; do not crash MCP.
-- Request timeouts:
-  - Per‑request timeout (default 10s). On timeout: kill process, report error, advise retry.
-- Invalid inputs:
-  - Validate JSON schema before calling bridge; return explicit field errors.
-- Process exits mid‑request:
-  - Surface a succinct error with exit code; allow auto‑restart on next call.
+- **Startup**: error, suggest `brew install luajit`/verify `POB_FORK_PATH`; keep XML tools, no crash.
+- **Timeouts**: default 10s; on timeout kill process+retry.
+- **Invalid inputs**: validate schema first, explicit field errors.
+- **Mid‑request exit**: error+exit code, auto‑restart.
 
 ## Security & Performance
-- Local only: process runs on user’s machine; no external network calls required.
-- Resource usage: keep a single hot process; teardown on MCP exit.
-- Large XML: avoid logging full XML; truncate or hash for logs.
+- Local only, no external network calls.
+- Single hot process, teardown on exit.
+- Truncate/hash large XML in logs.
 
 ## Testing Plan
-- Unit
-  - Bridge pings and banner parsing
-  - Timeouts and restart behavior
-- Integration
-  - `lua_start` → `lua_load_build` (sample XML) → `lua_get_stats`
-  - `lua_get_tree` → `lua_set_tree` → `lua_get_stats` (ensure values change)
-  - `lua_stop` idempotency
-- Manual
-  - Verify on macOS with `luajit` installed
-  - Verify graceful fallback when `POB_LUA_ENABLED` is false
+- **Unit**: bridge pings, banner parsing, timeouts, restart behavior
+- **Integration**: `lua_start`→`lua_load_build`(sample XML)→`lua_get_stats`; `lua_get_tree`→`lua_set_tree`→`lua_get_stats`(values change); `lua_stop` idempotency
+- **Manual**: macOS w/ `luajit`; fallback when `POB_LUA_ENABLED` false
 
 ## Rollout
-- Phase 1 (opt‑in): ship the tools behind `POB_LUA_ENABLED`; keep defaults off.
-- Phase 2 (default‑on beta): enable by default for users with validated `luajit` and fork path.
-- Phase 3: expand to what‑if diffs (`lua_calc_with`) and gem/item edits.
+- Phase 1: tools behind `POB_LUA_ENABLED`, off.
+- Phase 2: default-on for validated `luajit`+fork path.
+- Phase 3: what‑if diffs (`lua_calc_with`) + gem/item edits.
 
 ## Future Enhancements
-- What‑if APIs: temporary allocation testing without persisting changes.
-- Items/skills ops: structured import and calculation.
-- Stats contract: publish a curated, stable schema for MCP consumers.
-- PoB fork collaboration: upstream an official headless API mode.
+- What‑if APIs: temp allocation testing, no persist.
+- Items/skills ops: structured import+calc.
+- Stats contract: curated stable schema for MCP consumers.
+- PoB fork collab: upstream an official headless API mode.
 
 ## Prerequisites
-- `luajit` in PATH (`brew install luajit` on macOS).
-- PathOfBuilding present at `~/Projects/PathOfBuilding` (with the headless API scaffold in `src/API/`).
-- Set `POB_LUA_ENABLED=true` to expose the new tools.
-
-
+- `luajit` in PATH (`brew install luajit`)
+- PathOfBuilding at `~/Projects/PathOfBuilding` (`src/API/` scaffold)
+- Set `POB_LUA_ENABLED=true` to expose new tools.
 
 Node TCP client
-- Use `PoBLuaTcpClient` from `src/pobLuaBridge.ts` when talking to a live GUI instance:
-  - `const api = new PoBLuaTcpClient({ host: '127.0.0.1', port: 31337 });`
-  - `await api.start();`
-  - Then call `loadBuildXml`, `getStats`, `getTree`, `setTree`, etc.
-  - `await api.stop();`
+- `PoBLuaTcpClient` (`src/pobLuaBridge.ts`)→live GUI: `const api = new PoBLuaTcpClient({ host: '127.0.0.1', port: 31337 });`→`await api.start();`→`loadBuildXml`,`getStats`,`getTree`,`setTree`→`await api.stop();`

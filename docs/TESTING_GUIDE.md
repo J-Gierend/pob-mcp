@@ -1,18 +1,14 @@
 # PoB MCP Server Testing Guide
 
-This guide provides comprehensive test cases for all features of the Path of Building MCP server, with special focus on Phase 3 features (Lua bridge integration).
+Test cases for all PoB MCP server features, focus on Phase 3 (Lua bridge integration).
 
 ## Prerequisites
 
 ### For XML-Only Features
-- Path of Building Community Fork installed
-- At least 2-3 test builds in your PoB directory
-- MCP server configured in Claude Desktop
+PoB Community Fork installed; 2-3 test builds in PoB directory; MCP server configured in Claude Desktop.
 
 ### For Lua Bridge Features (Phase 3)
-- LuaJIT installed and in PATH (`luajit` command available)
-- PoB API Fork cloned locally: https://github.com/Dulluhan/pob-api
-- Environment variables configured (see Configuration section below)
+LuaJIT installed and in PATH (`luajit` available); PoB API Fork cloned: https://github.com/Dulluhan/pob-api; env vars configured (see Configuration below).
 
 ## Configuration for Testing
 
@@ -72,213 +68,53 @@ This guide provides comprehensive test cases for all features of the Path of Bui
 ## Phase 1: XML-Based Features
 
 ### Test 1.1: List Builds
-**Objective**: Verify build listing functionality
-
-**Steps**:
-1. Open Claude Desktop
-2. Ask: "List all my Path of Building builds"
-
-**Expected Results**:
-- Returns list of all .xml files in POB_DIRECTORY
-- Shows file names and subdirectories
-- Response is formatted clearly
-
-**Test Variations**:
-- "Show me my PoE builds"
-- "What builds do I have?"
+**Obj:** build listing. **Steps:** ask "List all my Path of Building builds". **Expect:** all .xml in POB_DIRECTORY listed, names+subdirs, clear format. **Variations:** "Show me my PoE builds"/"What builds do I have?"
 
 ### Test 1.2: Analyze Single Build
-**Objective**: Verify comprehensive build analysis
-
-**Steps**:
-1. Ask: "Analyze my [BuildName.xml] build"
-2. Review all sections of the output
-
-**Expected Results**:
-- Character class and ascendancy shown
-- Level displayed
-- Key stats extracted (Life, ES, DPS, resistances)
-- Skills listed with support gems
-- Items shown per slot
-- Build notes included if present
-
-**Test Variations**:
-- Try with different build types (melee, caster, bow, minion)
-- Test with builds at different levels
-- Test with incomplete builds
+**Obj:** full build analysis. **Steps:** ask "Analyze my [BuildName.xml] build". **Expect:** class/ascendancy, level, key stats(Life/ES/DPS/resists), skills+supports, items per slot, notes if present. **Variations:** build types(melee/caster/bow/minion); levels; incomplete builds
 
 ### Test 1.3: Compare Two Builds
-**Objective**: Verify side-by-side build comparison
-
-**Steps**:
-1. Ask: "Compare [Build1.xml] and [Build2.xml]"
-2. Review comparison output
-
-**Expected Results**:
-- Both builds analyzed
-- Key differences highlighted
-- Stats compared numerically
-- Class/ascendancy differences noted
-
-**Test Variations**:
-- Compare similar builds (same class, different gear)
-- Compare different builds (different classes)
+**Obj:** side-by-side comparison. **Steps:** ask "Compare [Build1.xml] and [Build2.xml]". **Expect:** both analyzed, differences highlighted, stats compared numerically, class/ascendancy noted. **Variations:** similar builds(same class); different classes
 
 ### Test 1.4: Get Build Stats
-**Objective**: Quick stat retrieval
-
-**Steps**:
-1. Ask: "What are the stats for [BuildName.xml]?"
-
-**Expected Results**:
-- All numerical stats returned
-- Formatted clearly
-- No unnecessary parsing errors
+**Obj:** quick stat retrieval. **Steps:** ask "What are the stats for [BuildName.xml]?". **Expect:** all numerical stats, clear format, no parsing errors
 
 ### Test 1.5: File Watching
-**Objective**: Real-time build change detection
-
-**Steps**:
-1. Ask: "Start watching my PoB builds"
-2. Modify a build in Path of Building
-3. Save the build
-4. Ask: "What changed recently?"
-5. Ask: "Stop watching"
-
-**Expected Results**:
-- Watch status confirms monitoring started
-- Changes detected within 2 seconds
-- Cache invalidated for changed builds
-- Recent changes list shows modified files with timestamps
-- Stop command cleanly ends monitoring
+**Obj:** real-time change detection. **Steps:** "Start watching my PoB builds" → modify+save a build → "What changed recently?" → "Stop watching". **Expect:** monitoring confirmed, changes detected <2s, cache invalidated, timestamps shown, clean stop
 
 ## Phase 2: Passive Tree Analysis
 
 ### Test 2.1: Node Extraction
-**Objective**: Verify passive tree data extraction
-
-**Steps**:
-1. Ask: "Show me the passive tree from [BuildName.xml]"
-
-**Expected Results**:
-- All allocated node IDs listed
-- Jewel slots identified
-- Keystones extracted
-- Tree metadata (class, ascendancy) shown
+**Obj:** tree data extraction. **Steps:** ask "Show me the passive tree from [BuildName.xml]". **Expect:** allocated node IDs, jewel slots, keystones, tree metadata(class/ascendancy)
 
 ### Test 2.2: Jewel Information
-**Objective**: Extract jewel data from tree
-
-**Steps**:
-1. Use a build with jewels
-2. Ask: "What jewels are in [BuildName.xml]?"
-
-**Expected Results**:
-- Jewel slots identified
-- Jewel names and mods listed
-- Position in tree shown
+**Obj:** jewel data extraction. **Steps:** ask "What jewels are in [BuildName.xml]?". **Expect:** jewel slots, names+mods, tree position
 
 ## Phase 3: Lua Bridge Features
 
 ### Setup: Initialize Lua Bridge
 
-Before testing Phase 3 features, initialize the bridge:
+**Steps:** ensure `POB_LUA_ENABLED=true`; ask "Start the PoB Lua bridge"; verify connection. **Expect:** success message (stdio or TCP mode), no missing-luajit/fork-path errors.
 
-**Steps**:
-1. Ensure `POB_LUA_ENABLED=true` in config
-2. Ask: "Start the PoB Lua bridge"
-3. Verify connection
-
-**Expected Results**:
-- Success message indicating stdio or TCP mode
-- No errors about missing luajit or fork path
-
-**Common Issues**:
+**Common Issues:**
 - `ENOENT`: luajit not found in PATH → Install LuaJIT
 - `Timed out waiting for response`: Fork path incorrect → Check POB_FORK_PATH
 - `Module not found`: Missing PoB modules → Ensure complete fork clone
 
 ### Test 3.1: Load Build into Lua Engine
-**Objective**: Load XML build for calculation
-
-**Steps**:
-1. Ensure bridge is started
-2. Ask: "Load my [BuildName.xml] into the Lua bridge"
-
-**Expected Results**:
-- Build loads successfully
-- Calculation engine initializes
-- No parsing errors
-
-**Test Variations**:
-- Load builds with different item configurations
-- Load builds with cluster jewels
-- Load builds with unique items
+**Obj:** load XML build. **Steps:** ask "Load my [BuildName.xml] into the Lua bridge". **Expect:** loads, engine initializes, no parsing errors. **Variations:** item configs; cluster jewels; unique items
 
 ### Test 3.2: Get Calculated Stats
-**Objective**: Retrieve high-fidelity stats from PoB engine
-
-**Steps**:
-1. Load a build (Test 3.1)
-2. Ask: "Get the calculated stats from the Lua bridge"
-
-**Expected Results**:
-- Comprehensive stat list returned
-- Values match what PoB GUI shows
-- Includes defensive, offensive, and utility stats
-
-**Test Variations**:
-- Request specific stats: "Get Life and DPS stats"
-- Request all stats
-- Compare with XML-parsed stats (should be more accurate)
+**Obj:** high-fidelity stats. **Steps:** ask "Get the calculated stats from the Lua bridge". **Expect:** full stat list, matches PoB GUI, defensive/offensive/utility. **Variations:** specific stats; all stats; vs XML-parsed (more accurate)
 
 ### Test 3.3: Get Passive Tree
-**Objective**: Extract tree data from loaded build
-
-**Steps**:
-1. Load a build
-2. Ask: "Get the passive tree from the Lua bridge"
-
-**Expected Results**:
-- Tree version returned
-- Class ID and ascendancy ID shown
-- All allocated node IDs listed
-- Mastery effects included
-- Format matches `get_tree` Lua API
+**Obj:** extract tree data. **Steps:** ask "Get the passive tree from the Lua bridge". **Expect:** tree version, classId+ascendClassId, allocated node IDs, mastery effects, matches `get_tree` API
 
 ### Test 3.4: Modify Passive Tree
-**Objective**: Update tree and recalculate stats
-
-**Steps**:
-1. Load a build
-2. Get current tree
-3. Ask: "Add nodes [65834, 65824] to the tree"
-4. Get stats again
-
-**Expected Results**:
-- Tree updates successfully
-- Stats recalculated
-- Changes reflected in stat output
-- Original XML file NOT modified
-
-**Test Variations**:
-- Add defensive nodes, verify life/ES increases
-- Add damage nodes, verify DPS increases
-- Add keystones, verify major stat changes
+**Obj:** update tree+recalc. **Steps:** ask "Add nodes [65834, 65824] to the tree"; get stats. **Expect:** tree updates, stats recalc, XML file NOT modified. **Variations:** defensive nodes(life/ES↑); damage nodes(DPS↑); keystones(major changes)
 
 ### Test 3.5: Compare Trees (Phase 3 Feature)
-**Objective**: Compare stat differences between tree allocations
-
-**Steps**:
-1. Load a build
-2. Get current node list
-3. Ask: "Compare my current tree with adding nodes [list] and removing nodes [list]"
-
-**Expected Results**:
-- Both trees calculated
-- Stat differences shown (before → after)
-- Clear indication of stat gains/losses
-- Formatted as readable comparison
+**Obj:** compare tree allocations. **Steps:** ask "Compare my current tree with adding nodes [list] and removing nodes [list]". **Expect:** both calculated, before→after diff shown, gains/losses clear, readable format.
 
 **Test Scenarios**:
 
@@ -301,19 +137,7 @@ Expected: Accuracy changes, crit chance zeroed, hit chance 100%
 ```
 
 ### Test 3.6: What-If Allocation Testing
-**Objective**: Preview stat changes without persisting
-
-**Steps**:
-1. Load a build
-2. Ask: "Preview allocating nodes [65834, 65824, 65826] without changing my build"
-3. Review stats
-4. Ask: "Get current stats" (verify build unchanged)
-
-**Expected Results**:
-- Preview shows modified stats
-- Original build remains unchanged
-- Can preview multiple scenarios sequentially
-- No side effects on loaded build
+**Obj:** preview w/o persisting. **Steps:** ask "Preview allocating nodes [65834, 65824, 65826] without changing my build"; then "Get current stats" (verify unchanged). **Expect:** preview shows modified stats, build unchanged, multiple sequential previews OK, no side effects.
 
 **Test Scenarios**:
 
@@ -338,18 +162,7 @@ Expected: Can compare multiple what-if scenarios
 ```
 
 ### Test 3.7: Build Planning from Scratch
-**Objective**: Get node recommendations for new builds
-
-**Steps**:
-1. Ask: "Help me plan a Berserker build focusing on two-handed axes and rage"
-2. Review recommendations
-
-**Expected Results**:
-- Class and ascendancy identified (Marauder/Berserker)
-- Starting nodes suggested
-- Relevant notable clusters identified
-- Path suggestions provided
-- Keystones relevant to archetype recommended
+**Obj:** node recs for new builds. **Steps:** ask "Help me plan a Berserker build focusing on two-handed axes and rage". **Expect:** class+ascendancy ID'd(Marauder/Berserker), starting nodes, notable clusters, path suggestions, relevant keystones.
 
 **Test Scenarios**:
 
@@ -387,27 +200,14 @@ Expected:
 ```
 
 ### Test 3.8: End-to-End Integration Test
-**Objective**: Test complete workflow from load to optimize
+**Obj:** complete load-to-optimize workflow.
 
-**Complete Workflow**:
-1. **Start**: "Start the PoB Lua bridge"
-2. **Load**: "Load my [BuildName.xml]"
-3. **Analyze**: "Get the current stats"
-4. **Identify**: "Show me the passive tree"
-5. **Plan**: "Compare adding these defensive nodes [list]"
-6. **Preview**: "Preview those changes"
-7. **Compare**: "Compare that with adding offensive nodes [list] instead"
-8. **Decide**: "Which option gives better EHP?"
-9. **Stop**: "Stop the Lua bridge"
+**Complete Workflow:** 1."Start the PoB Lua bridge" 2."Load my [BuildName.xml]" 3."Get the current stats" 4."Show me the passive tree" 5."Compare adding these defensive nodes [list]" 6."Preview those changes" 7."Compare that with adding offensive nodes [list] instead" 8."Which option gives better EHP?" 9."Stop the Lua bridge"
 
-**Expected Results**:
-- All steps complete without errors
-- Stats remain consistent across calls
-- Comparisons are accurate
-- Clean shutdown
+**Expect:** all steps succeed, stats consistent across calls, comparisons accurate, clean shutdown
 
 ### Test 3.9: Error Handling
-**Objective**: Verify graceful error handling
+**Obj:** graceful error handling.
 
 **Test Cases**:
 
@@ -442,34 +242,19 @@ Expected:
 ```
 
 ### Test 3.10: TCP Mode Testing
-**Objective**: Test connection to PoB GUI
+**Obj:** connection to PoB GUI.
 
 **Prerequisites**:
 - Windows machine with PoB GUI installed
 - Environment variable `POB_API_TCP=1` set before launching PoB
 - TCP server running in PoB (status bar shows "API: Listening on port 31337")
 
-**Steps**:
-1. Configure MCP server with TCP settings
-2. Ask: "Start the PoB Lua bridge"
-3. Verify connection to TCP server
-4. Perform operations (load build, get stats, etc.)
-
-**Expected Results**:
-- Connection established to PoB GUI
-- Operations work identically to stdio mode
-- Can interact with build currently open in GUI
+**Steps:** configure TCP settings; ask "Start the PoB Lua bridge"; verify TCP connection; run operations (load build, get stats). **Expect:** connects to GUI, ops work same as stdio mode, can interact with build already open
 
 ## Phase 4: Item & Skill Management Tests
 
 ### Test 4.1: Add Item
-**Objective**: Verify item addition from PoE text format
-
-**Steps**:
-1. Start bridge and load a build
-2. Get current DPS: "Get stats"
-3. Ask: "Add this weapon: [paste item text]"
-4. Get new DPS
+**Obj:** item addition from PoE text. **Steps:** get current DPS ("Get stats"); ask "Add this weapon: [paste item text]"; get new DPS.
 
 **Item Text Example**:
 ```
@@ -488,156 +273,36 @@ Adds 15 to 28 Physical Damage
 +18% to Attack Speed
 ```
 
-**Expected Results**:
-- Item added successfully
-- Item ID and name returned
-- Slot identified (e.g., "Weapon 1")
-- Stats recalculated
-- DPS changes reflected
-
-**Test Variations**:
-- Add item without specifying slot (auto-equip)
-- Add item with specific slot: "Add to Weapon 2"
-- Add item with `no_auto_equip`: "Add to inventory without equipping"
-- Try adding invalid item text (should error gracefully)
+**Expect:** item added, ID+name returned, slot ID'd(e.g. "Weapon 1"), stats recalc, DPS reflects change. **Variations:** no slot(auto-equip); specific slot("Add to Weapon 2"); `no_auto_equip`; invalid text(graceful error)
 
 ### Test 4.2: Get Equipped Items
-**Objective**: View all equipped items
-
-**Steps**:
-1. Load a build with items
-2. Ask: "What items do I have equipped?"
-
-**Expected Results**:
-- All equipment slots listed
-- Empty slots shown as "(empty)"
-- Item names displayed
-- Base types shown
-- Rarity indicated
-- Flask activation status shown
-
-**Test Variations**:
-- Build with full equipment
-- Build with no equipment
-- Build with only partial equipment
-- Build with flasks (check activation status)
+**Obj:** view equipped items. **Steps:** ask "What items do I have equipped?". **Expect:** all slots listed, empty as "(empty)", names, base types, rarity, flask activation shown. **Variations:** full/no/partial equipment; flask activation check
 
 ### Test 4.3: Toggle Flask
-**Objective**: Activate/deactivate flasks and verify stat changes
-
-**Steps**:
-1. Load a build with flasks
-2. Get current crit chance
-3. Ask: "Activate flask 1" (Diamond Flask)
-4. Get new crit chance
-5. Ask: "Deactivate flask 1"
-6. Verify crit chance returns to original
-
-**Expected Results**:
-- Flask toggles successfully
-- Confirmation message clear
-- Stats recalculate
-- Stat changes match flask effects
-- Can activate multiple flasks
-- Can deactivate flasks
-
-**Test Variations**:
-- Activate all 5 flasks
-- Deactivate all flasks
-- Toggle same flask multiple times
-- Try invalid flask number (0, 6, -1) - should error
-- Test with different flask types (life, mana, utility)
+**Obj:** activate/deactivate flask toggle+stat verify. **Steps:** get crit chance; ask "Activate flask 1"(Diamond Flask); get new crit chance; "Deactivate flask 1"; verify reverts. **Expect:** toggles work, clear confirmation, stats recalc match flask effect, multi-flask toggle OK. **Variations:** all 5 flasks; repeated toggles; invalid number(0, 6, -1)→error; flask types(life/mana/utility)
 
 ### Test 4.4: Get Skill Setup
-**Objective**: View skill configuration
-
-**Steps**:
-1. Load a build with multiple socket groups
-2. Ask: "Show me my skill setup"
-
-**Expected Results**:
-- All socket groups listed
-- Main socket group indicated
-- Skills within each group shown
-- Group labels displayed (if present)
-- Slot locations shown (e.g., "Body Armour")
-- Enabled status shown
-- "Contributes to Full DPS" flag shown
-- Skills listed with proper names
-
-**Test Variations**:
-- Build with 1 socket group
-- Build with multiple socket groups
-- Build with labeled groups
-- Build with disabled groups
+**Obj:** view skill config. **Steps:** ask "Show me my skill setup". **Expect:** socket groups, main group, skills per group, labels if present, slot locations(e.g. "Body Armour"), enabled status, "Contributes to Full DPS" flag, proper names. **Variations:** 1 group; multiple groups; labeled; disabled
 
 ### Test 4.5: Set Main Skill
-**Objective**: Change main skill and verify DPS recalculation
-
-**Steps**:
-1. Load a build with multiple skills
-2. Get skill setup to see available groups
-3. Get current DPS (main skill)
-4. Ask: "Set main skill to socket group 2"
-5. Get new DPS (should be different skill's DPS)
-6. Switch back: "Set main skill to socket group 1"
-
-**Expected Results**:
-- Main skill switches successfully
-- Confirmation message shows new selection
-- Stats recalculate for new skill
-- DPS reflects active skill
-- Can switch between groups freely
-
-**Test Variations**:
-- Switch between 3+ different skills
-- Set specific active skill index within group
-- Try invalid socket group number - should error
-- Test with multi-part skills (set skill_part parameter)
+**Obj:** main skill change+DPS recalc. **Steps:** get skill setup, current DPS; "Set main skill to socket group 2"; new DPS; switch back("...group 1"). **Expect:** switches successfully, confirms selection, recalcs DPS, free switching. **Variations:** 3+ skills; specific skill index; invalid group→error; multi-part skills(skill_part param)
 
 ### Test 4.6: Item + Flask Workflow
-**Objective**: Test combined item and flask operations
+**Obj:** combined item+flask operations.
 
-**Complete Workflow**:
-1. "Start bridge and load build"
-2. "What items do I have equipped?"
-3. "Get current stats"
-4. "Add this weapon: [item text]"
-5. "Activate diamond flask"
-6. "Activate quicksilver flask"
-7. "Get stats"
-8. "What's the DPS increase?"
+**Complete Workflow:** 1."Start bridge and load build" 2."What items do I have equipped?" 3."Get current stats" 4."Add this weapon: [item text]" 5."Activate diamond flask" 6."Activate quicksilver flask" 7."Get stats" 8."What's the DPS increase?"
 
-**Expected Results**:
-- All operations succeed in sequence
-- Stats update after each change
-- Final stats reflect all modifications
-- Can calculate DPS delta
+**Expect:** all ops succeed in sequence, stats update per change, final stats reflect all mods, DPS delta calculable
 
 ### Test 4.7: Complete Build Modification
-**Objective**: End-to-end build modification test
+**Obj:** e2e build modification test.
 
-**Complete Workflow**:
-1. "Start bridge"
-2. "Load template build"
-3. "Set tree to [node list]"
-4. "Add weapon: [item]"
-5. "Add body armour: [item]"
-6. "Add helmet: [item]"
-7. "Get skill setup"
-8. "Set main skill to group 1"
-9. "Activate flasks 1, 2, 3"
-10. "Get final stats"
+**Complete Workflow:** 1."Start bridge" 2."Load template build" 3."Set tree to [node list]" 4."Add weapon: [item]" 5."Add body armour: [item]" 6."Add helmet: [item]" 7."Get skill setup" 8."Set main skill to group 1" 9."Activate flasks 1, 2, 3" 10."Get final stats"
 
-**Expected Results**:
-- All modifications succeed
-- Stats update progressively
-- Final build reflects all changes
-- No state corruption
-- Can get comprehensive stats at end
+**Expect:** all mods succeed, stats update progressively, final build reflects all changes, no corruption, full stats retrievable
 
 ### Test 4.8: Error Handling - Items
-**Objective**: Verify graceful error handling for item operations
+**Obj:** graceful error handling for items.
 
 **Test Cases**:
 
@@ -669,7 +334,7 @@ Expected: Error or warning about invalid slot
 ```
 
 ### Test 4.9: Error Handling - Skills & Flasks
-**Objective**: Verify error handling for skill/flask operations
+**Obj:** verify error handling for skill/flask operations.
 
 **Test Cases**:
 
@@ -693,7 +358,7 @@ Expected: Error prompting to start bridge
 ```
 
 ### Test 4.10: Integration with Phase 3
-**Objective**: Verify Phase 4 tools work with Phase 3 features
+**Obj:** Phase 4 tools work w/ Phase 3.
 
 **Complete Workflow**:
 1. Start bridge, load build
@@ -706,94 +371,34 @@ Expected: Error prompting to start bridge
 8. Set different main skill (Phase 4)
 9. Compare DPS across all variations
 
-**Expected Results**:
-- Phase 3 and Phase 4 tools work together seamlessly
-- Stats remain consistent
-- No conflicts between tree and item modifications
-- Can combine all features in single session
+**Expect:** Phase 3+4 tools work seamlessly together, stats consistent, no tree/item conflicts, all features combinable in one session
 
 ## Phase 6: Optimization Tests
 
 ### Test 6.1: Defensive Analysis
-**Objective**: Identify defensive gaps and recommended fixes
-
-**Steps**:
-1. Start bridge and load a build with low resists/life
-2. Ask: "Analyze defenses for [BuildName.xml]"
-
-**Expected Results**:
-- Summary of resistances, life/ES, mitigation, sustain
-- Prioritized recommendations with actionable guidance
+**Obj:** ID defensive gaps+fixes. **Steps:** load low-resist/life build; ask "Analyze defenses for [BuildName.xml]". **Expect:** resistances/life/ES/mitigation/sustain summary; prioritized actionable recs
 
 ### Test 6.2: Suggest Optimal Nodes
-**Objective**: Get ranked node recommendations for a goal
-
-**Steps**:
-1. Load a build
-2. Ask: "Suggest nodes to maximize life for [BuildName.xml]"
-
-**Expected Results**:
-- Top recommendations ranked by efficiency (gain per point)
-- Path nodes and target ID shown
-- Projected stat improvements
+**Obj:** ranked node recs. **Steps:** ask "Suggest nodes to maximize life for [BuildName.xml]". **Expect:** top recs ranked by efficiency(gain/point), path+target ID, projected improvements
 
 ### Test 6.3: Full Tree Optimization
-**Objective**: Optimize allocation under constraints
-
-**Steps**:
-1. Load a build
-2. Ask: "Optimize tree for balanced goals on [BuildName.xml] with minLife 4000"
-
-**Expected Results**:
-- Optimized allocation returned
-- Constraints respected (e.g., min life/resists)
-- Clear description of changes and outcomes
+**Obj:** optimize under constraints. **Steps:** ask "Optimize tree for balanced goals on [BuildName.xml] with minLife 4000". **Expect:** optimized allocation, constraints respected (e.g., min life/resists), clear change description
 
 ## Performance Testing
 
 ### Test P.1: Build Load Time
-**Objective**: Measure load time for builds
-
-**Steps**:
-1. Load small build (< 10 items)
-2. Load medium build (full gear)
-3. Load large build (many cluster jewels)
-4. Note timestamps
-
-**Expected Results**:
-- Small: < 500ms
-- Medium: < 1s
-- Large: < 2s
+**Obj:** measure load time. **Steps:** small(<10 items)/medium(full gear)/large(cluster jewels) builds; note timestamps. **Expect:** small<500ms, medium<1s, large<2s
 
 ### Test P.2: Stat Calculation Time
-**Objective**: Measure calculation overhead
-
-**Steps**:
-1. Load a build
-2. Request stats 5 times in succession
-3. Note timestamps
-
-**Expected Results**:
-- First call: Calculation time
-- Subsequent calls: Should use cached output (< 100ms)
+**Obj:** measure calc overhead. **Steps:** request stats 5x; note timestamps. **Expect:** first=calc time, rest cached(<100ms)
 
 ### Test P.3: What-If Scenarios
-**Objective**: Measure preview calculation time
-
-**Steps**:
-1. Load a build
-2. Test 10 different node additions (what-if)
-3. Measure each
-
-**Expected Results**:
-- Each preview: < 500ms
-- No memory leaks
-- Consistent performance
+**Obj:** measure preview calc time. **Steps:** test 10 what-if node additions; measure each. **Expect:** each <500ms, no leaks, consistent
 
 ## Integration Testing
 
 ### Test I.1: Multi-Tool Workflow
-**Objective**: Test tools working together
+**Obj:** test tools working together.
 
 **Workflow**:
 1. List builds (XML)
@@ -803,13 +408,10 @@ Expected: Error prompting to start bridge
 5. Compare XML stats vs Lua stats
 6. Stop bridge
 
-**Expected Results**:
-- Both XML and Lua modes work
-- Stats are comparable (Lua should be more accurate)
-- No conflicts between modes
+**Expect:** both modes work, stats comparable(Lua more accurate), no conflicts
 
 ### Test I.2: Build Comparison with What-If
-**Objective**: Compare two builds with modifications
+**Obj:** compare two builds with modifications.
 
 **Workflow**:
 1. Load Build A into Lua
@@ -819,61 +421,34 @@ Expected: Error prompting to start bridge
 5. Get Build B stats
 6. Compare stats between builds
 
-**Expected Results**:
-- Can switch between builds
-- Stats update correctly
-- Comparisons remain accurate
+**Expect:** switches between builds, stats update correctly, comparisons stay accurate
 
 ## Regression Testing
 
 After any code changes, verify:
 
 ### XML Features Still Work
-- [ ] list_builds
-- [ ] analyze_build
-- [ ] compare_builds
-- [ ] get_build_stats
-- [ ] File watching
+[ ] list_builds · [ ] analyze_build · [ ] compare_builds · [ ] get_build_stats · [ ] File watching
 
 ### Lua Features Still Work
-- [ ] lua_start
-- [ ] lua_load_build
-- [ ] lua_get_stats
-- [ ] lua_get_tree
-- [ ] lua_set_tree
-- [ ] lua_stop
+[ ] lua_start · [ ] lua_load_build · [ ] lua_get_stats · [ ] lua_get_tree · [ ] lua_set_tree · [ ] lua_stop
 
 ### Phase 3 Features Still Work
-- [ ] compare_trees
-- [ ] test_allocation
-- [ ] plan_tree
-- [ ] get_nearby_nodes
-- [ ] find_path_to_node
-- [ ] allocate_nodes
-- [ ] get_build_xml
-- [ ] refresh_tree_data
+[ ] compare_trees · [ ] test_allocation · [ ] plan_tree · [ ] get_nearby_nodes · [ ] find_path_to_node · [ ] allocate_nodes · [ ] get_build_xml · [ ] refresh_tree_data
 
 ### Phase 4 Features Still Work
-- [ ] add_item
-- [ ] get_equipped_items
-- [ ] toggle_flask
-- [ ] get_skill_setup
-- [ ] set_main_skill
+[ ] add_item · [ ] get_equipped_items · [ ] toggle_flask · [ ] get_skill_setup · [ ] set_main_skill
 
 ### Phase 6 Features Still Work
-- [ ] analyze_defenses
-- [ ] suggest_optimal_nodes
-- [ ] optimize_tree
+[ ] analyze_defenses · [ ] suggest_optimal_nodes · [ ] optimize_tree
 
 ### Build Process
-- [ ] `npm run build` completes without errors
-- [ ] No TypeScript errors
-- [ ] No linting errors
+[ ] `npm run build` completes without errors · [ ] No TypeScript errors · [ ] No linting errors
 
 ## Troubleshooting Guide
 
 ### Issue: "luajit command not found"
-**Solution**: Install LuaJIT and ensure it's in PATH
+**Fix**: install LuaJIT, ensure in PATH
 ```bash
 # macOS
 brew install luajit
@@ -886,28 +461,16 @@ sudo apt-get install luajit
 ```
 
 ### Issue: "Failed to find valid ready banner"
-**Solution**: Check POB_FORK_PATH points to correct directory
-- Should contain HeadlessWrapper.lua
-- Should contain Modules/ directory with PoB code
+**Fix**: check POB_FORK_PATH is correct — must contain HeadlessWrapper.lua + Modules/ dir
 
 ### Issue: "Timed out waiting for response"
-**Solution**:
-- Increase POB_TIMEOUT_MS (default 10000ms)
-- Verify PoB fork installation is complete
-- Check if HeadlessWrapper.lua has syntax errors
+**Fix**: raise POB_TIMEOUT_MS(default 10000ms); verify fork install complete; check HeadlessWrapper.lua syntax
 
 ### Issue: Stats don't match PoB GUI
-**Solution**:
-- Verify same game version
-- Check configuration (bandit, pantheon, enemy level)
-- Ensure PoB fork is up-to-date
+**Fix**: verify game version; check config (bandit/pantheon/enemy level); update PoB fork
 
 ### Issue: TCP connection fails
-**Solution**:
-- Verify PoB GUI launched with POB_API_TCP=1
-- Check firewall settings
-- Verify port 31337 not in use
-- Try telnet 127.0.0.1 31337 to test connection
+**Fix**: verify POB_API_TCP=1 at launch; check firewall; verify port 31337 free; test `telnet 127.0.0.1 31337`
 
 ## Test Result Template
 
@@ -964,18 +527,9 @@ Use this template to document test results:
 
 ## Automated Testing (Future)
 
-Currently, all tests are manual. Future enhancements could include:
-
-1. Unit tests for XML parsing
-2. Mock PoB process for Lua bridge tests
-3. Snapshot testing for stat outputs
-4. Performance benchmarking suite
-5. CI/CD integration
+Currently all manual. Future: 1.Unit tests for XML parsing 2.Mock PoB process for Lua bridge 3.Snapshot testing for stat outputs 4.Perf benchmark suite 5.CI/CD integration
 
 ## Contributing Test Cases
 
-When adding new features:
-1. Add test cases to this guide
-2. Document expected behavior
-3. Include error scenarios
+When adding features: 1.add test cases here 2.document expected behavior 3.include error scenarios
 4. Provide test data if needed

@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Trade API integration enables Claude to search the Path of Exile trade site for items, check prices, and make upgrade recommendations based on your build requirements.
+Claude searches the PoE trade site: items, prices, upgrade recommendations.
 
 ## Setup
 
 ### 1. Enable Trade API
 
-Add the following environment variable to your Claude Desktop configuration:
+Add env var to Claude Desktop config:
 
 ```json
 {
@@ -27,8 +27,6 @@ Add the following environment variable to your Claude Desktop configuration:
 
 ### 2. Optional Configuration
 
-Fine-tune the Trade API behavior with these optional environment variables:
-
 ```json
 {
   "env": {
@@ -39,101 +37,65 @@ Fine-tune the Trade API behavior with these optional environment variables:
 }
 ```
 
-**Environment Variables:**
-- `POE_TRADE_ENABLED`: Set to "true" to enable Trade API (required)
-- `POE_RATE_LIMIT_PER_SECOND`: Requests per second limit (default: 4)
-- `POE_CACHE_TTL`: Cache time-to-live in seconds (default: 300)
+`POE_TRADE_ENABLED`: "true"=enable (required) · `POE_RATE_LIMIT_PER_SECOND`: req/s (default 4) · `POE_CACHE_TTL`: cache TTL s (default 300)
 
 ### 3. Restart Claude Desktop
-
-After updating the configuration, restart Claude Desktop for changes to take effect.
 
 ## Available Tools
 
 ### 1. `get_leagues`
 
-Get list of available leagues for trade searches.
+Active leagues for trade searches.
 
 **Example:**
 ```
 What leagues are available for trading?
 ```
 
-**Response:**
-- List of active leagues (Standard, Hardcore, current challenge league, etc.)
-- Realm information (PC, Console)
+**Response:** leagues (Standard, Hardcore, challenge...), realm (PC, Console).
 
 ---
 
 ### 2. `search_trade_items`
 
-Search for items matching specific criteria.
+Search items by criteria:
 
 **Parameters:**
-- `league` (required): League name (e.g., "Standard", "Settlers")
-- `item_name`: Specific item name (e.g., "Headhunter")
-- `item_type`: Base type (e.g., "Corsair Sword")
-- `min_price`, `max_price`: Price range in specified currency
-- `price_currency`: Currency type (default: "chaos")
-- `online_only`: Only show online sellers (default: true)
-- `rarity`: Item rarity filter ("normal", "magic", "rare", "unique", "any")
-- `min_links`: Minimum linked sockets (e.g., 6 for 6-link)
-- `stats`: Array of stat requirements
-- `sort`: Sort order ("price_asc" or "price_desc")
-- `limit`: Maximum results (default: 10, max: 10 per request)
+`league`(required, e.g."Standard"),`item_name`,`item_type`,`min_price`/`max_price`,`price_currency`(chaos),`online_only`(true),`rarity`,`min_links`(e.g.6),`stats`,`sort`,`limit`(10, max 10/request).
 
 **Examples:**
 
-Find cheap 6-links in Standard:
 ```
 Search for 6-link body armour in Standard league under 20 chaos
 ```
-
-Find unique item:
 ```
 Search for Headhunter in Standard league
 ```
-
-Find rare items with specific stats:
 ```
 Search for rare helmets in Standard with at least 80 life and 40% fire resistance
 ```
 
-**Response:**
-- List of matching items with prices
-- Item stats and mods
-- Seller information
-- Whisper commands for trade
+**Response:** items+prices, stats/mods, seller, whisper commands.
 
 ---
 
 ### 3. `get_item_price`
 
-Get current market price statistics for a specific item.
+Price stats for an item:
 
 **Parameters:**
-- `item_name` (required): Item to price check
-- `league`: League to check (default: "Standard")
-- `item_type`: Base type to narrow search
-- `rarity`: Item rarity filter
+`item_name`(required),`league`(Standard),`item_type`,`rarity`.
 
 **Examples:**
 
-Check unique item price:
 ```
 What's the current price of Headhunter in Standard?
 ```
-
-Check rare base price:
 ```
 How much do Astral Plates cost in Standard?
 ```
 
-**Response:**
-- Price statistics (low, median, average, high)
-- Sample size
-- Multiple currencies if applicable
-- Total listing count
+**Response:** low/median/avg/high, sample size, currencies, listing count.
 
 ---
 
@@ -175,57 +137,39 @@ Search for Taste of Hate flask in Standard, show me the 5 cheapest ones.
 ## Trade API Features
 
 ### Rate Limiting
-- Automatically limits requests to 4 per second (configurable)
-- Uses token bucket algorithm for smooth request distribution
-- Respects API rate limit headers
-- Automatic retry with exponential backoff
+4/s default, token bucket, respects rate-limit headers, exponential-backoff retry.
 
 ### Caching
-- Results cached for 5 minutes (configurable)
-- Stat definitions cached for 1 hour
-- League list cached for 1 hour
-- Reduces redundant API calls
+Results 5min, stat defs 1hr, leagues 1hr — cuts redundant calls.
 
 ### Error Handling
-- Graceful handling of rate limits
-- Clear error messages
-- Validation of required parameters
-- Fallback for missing data
+Graceful rate-limits, clear errors, param validation, missing-data fallback.
 
 ## Troubleshooting
 
 ### "Trade API is not enabled"
-**Solution:** Set `POE_TRADE_ENABLED=true` in your Claude Desktop config and restart.
+**Solution:** set `POE_TRADE_ENABLED=true`, restart.
 
 ### "Rate limited. Retry after Xms"
-**Solution:** The API is rate limiting. Wait a few seconds and try again. Consider reducing `POE_RATE_LIMIT_PER_SECOND` if this happens frequently.
+**Solution:** wait, retry; reduce `POE_RATE_LIMIT_PER_SECOND` if frequent.
 
 ### "No items found"
-**Possible causes:**
-1. Typo in item name - try searching with just partial name
-2. League doesn't exist - use `get_leagues` to see available leagues
-3. Filters too restrictive - relax price or stat requirements
-4. Item doesn't exist in that league
+**Causes:** typo; league doesn't exist (`get_leagues`); filters too strict; item unavailable.
 
 ### "Failed to fetch items"
-**Possible causes:**
-1. Network connectivity issue
-2. Trade site is down
-3. Invalid query parameters
+**Causes:** network issue, site down, invalid params.
 
 ## Advanced Usage
 
 ### Using Stat IDs
 
-For precise stat filtering, you can use Trade API stat IDs:
-
 Common stat IDs:
-- `pseudo.pseudo_total_life`: Total maximum life
-- `pseudo.pseudo_total_energy_shield`: Total energy shield
-- `pseudo.pseudo_total_fire_resistance`: Total fire resistance
-- `pseudo.pseudo_total_cold_resistance`: Total cold resistance
-- `pseudo.pseudo_total_lightning_resistance`: Total lightning resistance
-- `pseudo.pseudo_total_chaos_resistance`: Total chaos resistance
+- `pseudo.pseudo_total_life`
+- `pseudo.pseudo_total_energy_shield`
+- `pseudo.pseudo_total_fire_resistance`
+- `pseudo.pseudo_total_cold_resistance`
+- `pseudo.pseudo_total_lightning_resistance`
+- `pseudo.pseudo_total_chaos_resistance`
 
 **Example:**
 ```json
@@ -239,37 +183,23 @@ Common stat IDs:
 
 ### Currency Conversion
 
-The Trade API returns prices in the currency sellers specify. Common currencies:
-- `chaos`: Chaos Orb (standard currency)
-- `divine`: Divine Orb (high-value currency)
-- `exalted`: Exalted Orb (legacy high-value)
-- `mirror`: Mirror of Kalandra (extremely rare)
+Prices in seller's currency: `chaos` (standard), `divine` (high-value), `exalted` (legacy high-value), `mirror` (extremely rare).
 
 ## Limitations
 
-1. **No Authentication**: Currently only supports public searches (no account-specific features)
-2. **Rate Limits**: Limited to ~4 requests/second (conservative)
-3. **Search Results**: Maximum 10 items per request
-4. **Cache Staleness**: Prices may be up to 5 minutes old
-5. **Stat Mapping**: Some complex mods may not have direct stat IDs
+1. **No Auth**: public only
+2. **Rate Limits**: ~4 requests/second
+3. **Results**: max 10/request
+4. **Staleness**: up to 5min old
+5. **Stat Mapping**: some mods lack direct IDs
 
 ## Future Enhancements
 
-Planned features:
-- **Item upgrade recommendations**: Automated suggestions based on build analysis
-- **Resistance gap solver**: Find cheapest gear combination to cap resists
-- **Budget build planner**: Create shopping lists within budget constraints
-- **Price history tracking**: Trend analysis for items
-- **Bulk search**: Search multiple item types at once
+**item upgrade recommendations**, **resistance gap solver**, **budget build planner**, **price history tracking**, **bulk search**.
 
 ## Support
 
-If you encounter issues:
-1. Check Trade API is enabled in config
-2. Verify Claude Desktop was restarted after config changes
-3. Check console logs for error details
-4. Ensure network connectivity to pathofexile.com
-5. Report issues at https://github.com/ianderse/pob-mcp-server/issues
+Check: Trade API enabled, Desktop restarted, console logs, network to pathofexile.com; report: https://github.com/ianderse/pob-mcp-server/issues
 
 ## References
 

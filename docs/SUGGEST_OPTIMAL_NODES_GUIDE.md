@@ -2,7 +2,7 @@
 
 ## What It Does
 
-Intelligently analyzes your build and recommends the **best passive tree nodes** to allocate based on your goal. Uses actual PoB calculations to rank nodes by efficiency (stat gain per point spent).
+Analyzes build, recommends **best passive tree nodes** for your goal. Uses real PoB calcs to rank nodes by efficiency (stat gain/point).
 
 ## Basic Usage
 
@@ -13,46 +13,25 @@ suggest_optimal_nodes(
 )
 ```
 
-**Result:** Top 10 life nodes ranked by efficiency, with paths and stat projections.
+**Result:** top 10 life nodes ranked by efficiency, w/ paths+projections.
 
 ## Supported Goals
 
 ### Offense
-- `maximize_dps` - Total DPS
-- `maximize_hit_dps` - Hit damage only
-- `maximize_dot_dps` - DoT damage only
-- `crit_chance` - Crit chance
-- `crit_multi` - Crit multiplier
-- `attack_speed` - Attack speed
-- `cast_speed` - Cast speed
+`maximize_dps`, `maximize_hit_dps`, `maximize_dot_dps`, `crit_chance`, `crit_multi`, `attack_speed`, `cast_speed`
 
 ### Defense
-- `maximize_life` - Life pool
-- `maximize_es` - Energy shield
-- `maximize_ehp` - Life + ES
-- `resistances` - Lowest resistance
-- `armour` - Armour rating
-- `evasion` - Evasion rating
-- `block` - Block chance
-- `spell_block` - Spell block chance
+`maximize_life`, `maximize_es`, `maximize_ehp`, `resistances`(lowest), `armour`, `evasion`, `block`, `spell_block`
 
 ### Utility
-- `movement_speed` - Movement speed
-- `mana_regen` - Mana regen
-- `life_regen` - Life regen
-- `attributes` - Total STR/DEX/INT
+`movement_speed`, `mana_regen`, `life_regen`, `attributes`(STR/DEX/INT)
 
 ### Balanced
-- `balanced` - Mix of offense/defense
-- `league_start` - Leveling priorities (60% life, 40% DPS)
+`balanced`(offense/defense mix), `league_start`(leveling: 60% life, 40% DPS)
 
 ## Natural Language Support
 
-You can also use natural language:
-- "increase life" → `maximize_life`
-- "more damage" → `maximize_dps`
-- "get tankier" → `maximize_ehp`
-- "crit multi" → `crit_multi`
+Natural language: "increase life"→`maximize_life`, "more damage"→`maximize_dps`, "get tankier"→`maximize_ehp`, "crit multi"→`crit_multi`
 
 ## Advanced Parameters
 
@@ -69,21 +48,7 @@ suggest_optimal_nodes(
 
 ### When to Adjust Parameters
 
-**Increase `max_points`:**
-- You have many unallocated points
-- Willing to invest heavily in one direction
-
-**Increase `max_distance`:**
-- Not finding good recommendations
-- Want to explore further from current tree
-
-**Increase `min_efficiency`:**
-- Only want the very best nodes
-- Filter out mediocre options
-
-**Disable `include_keystones`:**
-- Don't want major build-changing nodes
-- Only want incremental improvements
+**↑`max_points`**: many unallocated points, invest heavily · **↑`max_distance`**: explore further from tree · **↑`min_efficiency`**: filter to best nodes only · **disable `include_keystones`**: incremental only, no major changes.
 
 ## Example Workflows
 
@@ -161,17 +126,7 @@ suggest_optimal_nodes(build_name="MyBuild.xml", goal="balanced")
    → Use: allocate_nodes(build_name="Deadeye.xml", node_ids=["12345", "23456", "34567", "26725"])
 ```
 
-**Breakdown:**
-- `⭐` = Top pick (best efficiency)
-- `Constitution` = Node name
-- `[26725]` = Node ID
-- `(NOTABLE)` = Node type (keystone/notable/small)
-- `+180 life/point` = **Efficiency score** (key metric!)
-- `Path: 4 nodes` = Total passive points needed
-- `Stat Gain: +720` = Total life increase
-- `+17.1% increase` = Percentage improvement
-- `Bonus: +30 STR` = Secondary benefits
-- `→ Use: allocate_nodes(...)` = Ready-to-run command
+`⭐`=top pick · `Constitution`=name · `[26725]`=node ID · `(NOTABLE)`=type(keystone/notable/small) · `+180 life/point`=**efficiency** · `Path: 4 nodes`=points needed · `Stat Gain: +720`=life increase · `+17.1% increase`=% improvement · `Bonus: +30 STR`=secondary · `→ Use: allocate_nodes(...)`=ready command
 
 ### Summary Section
 ```
@@ -181,60 +136,44 @@ Top 3 picks would give +1,720 life for 12 points (143 life/point average)
 Current: 4,200 → Projected: 5,920 (+41% increase)
 ```
 
-**Shows:**
-- Single best node
-- Combined value of top 3
-- Total point cost
-- Projected new stat value
+**Shows:** best node, top-3 combined value, point cost, projected stat.
 
 ### Tip
 ```
 **TIP:** Allocate the top pick first, then re-run this tool to find the next best options.
 ```
 
-**Why?** After allocating nodes, the tree changes. Re-running finds the new best options based on updated tree.
+**Why?** Allocating changes the tree — re-run to find the new best options.
 
 ## Iterative Optimization
 
-**Best Practice:**
-1. Run `suggest_optimal_nodes`
-2. Pick top recommendation
-3. Run `allocate_nodes` to test it
-4. If good, keep it
-5. Re-run `suggest_optimal_nodes` to find next best
-6. Repeat until satisfied
-
-This ensures each allocation is optimal given the current tree.
+**Best Practice:** `suggest_optimal_nodes` → pick top → `allocate_nodes` test → keep if good → re-run → repeat until satisfied. Ensures each allocation is optimal for the current tree.
 
 ## Common Questions
 
 ### Q: How does it rank nodes?
-**A:** By **efficiency** (stat gain per point spent). A node giving +720 life for 4 points (180/point) ranks higher than +100 life for 1 point (100/point).
+**A:** By **efficiency** (stat/point). +720 life/4pts(180/pt) ranks above +100 life/1pt(100/pt).
 
 ### Q: Are these actual PoB calculations?
-**A:** Yes! The tool loads your build into PoB's Lua engine, allocates each path, and measures real stat changes.
+**A:** Yes — loads build into PoB's Lua engine, allocates each path, measures real stat changes.
 
 ### Q: Why do some nodes show "Bonus" stats?
-**A:** Secondary benefits. E.g., a life node might also give +30 STR, which improves melee damage if you scale with STR.
+**A:** Secondary benefits — e.g. a life node may also give +30 STR, helping melee scaling.
 
 ### Q: What if I get "No recommendations found"?
-**A:** Try:
-- Increasing `max_distance` (default is 5)
-- Lowering `min_efficiency` (default is 0)
-- Enabling keystones if disabled
-- Choosing a different goal
+**A:** raise `max_distance`(default 5), lower `min_efficiency`(default 0), enable keystones, or try a different goal.
 
 ### Q: Can I use this for keystones?
-**A:** Yes! Keystones are included by default. Set `include_keystones: false` to exclude them.
+**A:** Yes, included by default; `include_keystones: false` excludes them.
 
 ### Q: How long does it take?
-**A:** Typically 20-30 seconds for ~20 candidates. Each candidate requires pathfinding + Lua stat calculation (~1s each).
+**A:** ~20-30 s for ~20 candidates (~1s each: pathfinding+Lua calc).
 
 ### Q: Does it consider travel nodes?
-**A:** Yes. The "Path" includes all nodes needed (travel + target). Efficiency accounts for total point cost.
+**A:** Yes — "Path" includes travel+target nodes; efficiency accounts for total point cost.
 
 ### Q: Can it suggest multiple nodes at once?
-**A:** Currently suggests individual nodes. For combining multiple nodes, use the top 3 summary as guidance.
+**A:** Individual nodes only; use top-3 summary as guidance for combining.
 
 ## Tips & Tricks
 
@@ -288,46 +227,26 @@ suggest_optimal_nodes(build="MyBuild.xml", goal="maximize_dps")
 ## Troubleshooting
 
 ### "Lua bridge required"
-**Solution:** Enable `POB_LUA_ENABLED=true` in your config. This tool requires the Lua bridge for accurate stat calculations.
+**Fix:** enable `POB_LUA_ENABLED=true` — this tool needs the Lua bridge for accurate stats.
 
 ### "No candidate nodes found"
-**Solutions:**
-- Increase `max_distance` (try 7 or 10)
-- Enable keystones if disabled
-- Check if build has room to expand (not fully optimized)
+**Fix:** raise `max_distance`(7-10), enable keystones, or check build has room to expand.
 
 ### "No nodes met minimum efficiency threshold"
-**Solutions:**
-- Lower `min_efficiency` to 0
-- Increase `max_distance` to find better options
-- Consider a different goal
+**Fix:** lower `min_efficiency` to 0, raise `max_distance`, or try a different goal.
 
 ### Recommendations seem wrong
-**Check:**
-- Is the goal correct? ("maximize_dps" vs "maximize_hit_dps")
-- Is the build loaded correctly? (verify with `lua_get_stats`)
-- Are you comparing efficiency or absolute gain? (efficiency is key)
+**Check:** correct goal ("maximize_dps" vs "maximize_hit_dps"); build loaded correctly (verify `lua_get_stats`); efficiency vs absolute gain (efficiency is key).
 
 ## Performance Notes
 
-- **Fast:** 20-30 seconds for typical search
-- **Scalable:** Adjusting `max_distance` increases search space exponentially
-- **Memory:** Uses PoB Lua bridge (requires ~100MB RAM)
-- **Optimal:** `max_distance=5`, `max_points=10` balances thoroughness vs speed
+**Fast**: 20-30 s typical · **Scalable**: `max_distance` grows search space exponentially · **Memory**: PoB Lua bridge ~100MB RAM · **Optimal**: `max_distance=5`,`max_points=10` balances thoroughness/speed.
 
 ## Related Tools
 
-**Discovery Workflow:**
-1. `suggest_optimal_nodes` ← **AI recommendations (start here!)**
-2. `get_nearby_nodes` ← Manual discovery
-3. `find_path_to_node` ← Manual pathfinding
-4. `allocate_nodes` ← Testing stat impact
+**Discovery:** 1.`suggest_optimal_nodes`(start here!) 2.`get_nearby_nodes`(manual discovery) 3.`find_path_to_node`(manual pathfinding) 4.`allocate_nodes`(test impact)
 
-**Analysis Workflow:**
-1. `analyze_defenses` ← Identify weaknesses
-2. `suggest_optimal_nodes(goal="maximize_life")` ← Fix low life
-3. `suggest_optimal_nodes(goal="resistances")` ← Fix resists
-4. `analyze_defenses` ← Verify improvements
+**Analysis:** 1.`analyze_defenses`(find weaknesses) 2.`suggest_optimal_nodes(goal="maximize_life")`(fix life) 3.`suggest_optimal_nodes(goal="resistances")`(fix resists) 4.`analyze_defenses`(verify)
 
 ---
 
